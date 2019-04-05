@@ -1,0 +1,220 @@
+     1                                  ; external functions from X11 library
+     2                                  extern XOpenDisplay
+     3                                  extern XDisplayName
+     4                                  extern XCloseDisplay
+     5                                  extern XCreateSimpleWindow
+     6                                  extern XMapWindow
+     7                                  extern XRootWindow
+     8                                  extern XSelectInput
+     9                                  extern XFlush
+    10                                  extern XCreateGC
+    11                                  extern XSetForeground
+    12                                  extern XDrawLine
+    13                                  extern XNextEvent
+    14                                  
+    15                                  ; external functions from stdio library (ld-linux-x86-64.so.2)    
+    16                                  extern printf
+    17                                  extern exit
+    18                                  
+    19                                  %define	StructureNotifyMask	131072
+    20                                  %define KeyPressMask		1
+    21                                  %define ButtonPressMask		4
+    22                                  %define MapNotify		19
+    23                                  %define KeyPress		2
+    24                                  %define ButtonPress		4
+    25                                  %define Expose			12
+    26                                  %define ConfigureNotify		22
+    27                                  %define CreateNotify 16
+    28                                  %define QWORD	8
+    29                                  %define DWORD	4
+    30                                  %define WORD	2
+    31                                  %define BYTE	1
+    32                                  
+    33                                  global main
+    34                                  
+    35                                  section .bss
+    36 00000000 <res 00000008>          display_name:	resq	1
+    37 00000008 <res 00000004>          screen:			resd	1
+    38 0000000C <res 00000004>          depth:         	resd	1
+    39 00000010 <res 00000004>          connection:    	resd	1
+    40 00000014 <res 00000004>          width:         	resd	1
+    41 00000018 <res 00000004>          height:        	resd	1
+    42 0000001C <res 00000008>          window:		resq	1
+    43 00000024 <res 00000008>          gc:		resq	1
+    44                                  
+    45                                  section .data
+    46                                  
+    47 00000000 0000000000000000-       event:		times	24 dq 0
+    47 00000000 <rept>             
+    48                                  
+    49 000000C0 00000000                x1:	dd	0
+    50 000000C4 00000000                x2:	dd	0
+    51 000000C8 00000000                y1:	dd	0
+    52 000000CC 00000000                y2:	dd	0
+    53                                  
+    54                                  section .text
+    55                                  	
+    56                                  ;##################################################
+    57                                  ;########### PROGRAMME PRINCIPAL ##################
+    58                                  ;##################################################
+    59                                  
+    60                                  main:
+    61 00000000 4831FF                  xor     rdi,rdi
+    62 00000003 E8(00000000)            call    XOpenDisplay	; Création de display
+    63 00000008 48890425[00000000]      mov     qword[display_name],rax	; rax=nom du display
+    64                                  
+    65                                  ; display_name structure
+    66                                  ; screen = DefaultScreen(display_name);
+    67 00000010 488B0425[00000000]      mov     rax,qword[display_name]
+    68 00000018 8B80E0000000            mov     eax,dword[rax+0xe0]
+    69 0000001E 890425[08000000]        mov     dword[screen],eax
+    70                                  
+    71 00000025 488B3C25[00000000]      mov rdi,qword[display_name]
+    72 0000002D 8B3425[08000000]        mov esi,dword[screen]
+    73 00000034 E8(00000000)            call XRootWindow
+    74 00000039 4889C3                  mov rbx,rax
+    75                                  
+    76 0000003C 488B3C25[00000000]      mov rdi,qword[display_name]
+    77 00000044 4889DE                  mov rsi,rbx
+    78 00000047 BA0A000000              mov rdx,10
+    79 0000004C B90A000000              mov rcx,10
+    80 00000051 41B890010000            mov r8,400	; largeur
+    81 00000057 41B990010000            mov r9,400	; hauteur
+    82 0000005D 6A00                    push 0x000000	; background  0xRRGGBB
+    83 0000005F 6800FF0000              push 0x00FF00
+    84 00000064 6A01                    push 1
+    85 00000066 E8(00000000)            call XCreateSimpleWindow
+    86 0000006B 48890425[1C000000]      mov qword[window],rax
+    87                                  
+    88 00000073 488B3C25[00000000]      mov rdi,qword[display_name]
+    89 0000007B 488B3425[1C000000]      mov rsi,qword[window]
+    90 00000083 BA05000200              mov rdx,131077 ;131072
+    91 00000088 E8(00000000)            call XSelectInput
+    92                                  
+    93 0000008D 488B3C25[00000000]      mov rdi,qword[display_name]
+    94 00000095 488B3425[1C000000]      mov rsi,qword[window]
+    95 0000009D E8(00000000)            call XMapWindow
+    96                                  
+    97 000000A2 488B3425[1C000000]      mov rsi,qword[window]
+    98 000000AA BA00000000              mov rdx,0
+    99 000000AF B900000000              mov rcx,0
+   100 000000B4 E8(00000000)            call XCreateGC
+   101 000000B9 48890425[24000000]      mov qword[gc],rax
+   102                                  
+   103 000000C1 488B3C25[00000000]      mov rdi,qword[display_name]
+   104 000000C9 488B3425[24000000]      mov rsi,qword[gc]
+   105 000000D1 BAFFFFFF00              mov rdx,0xFFFFFF	; Couleur du crayon
+   106 000000D6 E8(00000000)            call XSetForeground
+   107                                  
+   108                                  boucle: ; boucle de gestion des évènements
+   109 000000DB 488B3C25[00000000]      mov rdi,qword[display_name]
+   110 000000E3 48BE-                   mov rsi,event
+   110 000000E5 [0000000000000000] 
+   111 000000ED E8(00000000)            call XNextEvent
+   112                                  
+   113 000000F2 833C25[00000000]16      cmp dword[event],ConfigureNotify	; à l'apparition de la fenêtre
+   114 000000FA 7410                    je dessin							; on saute au label 'dessin'
+   115                                  
+   116 000000FC 833C25[00000000]02      cmp dword[event],KeyPress			; Si on appuie sur une touche
+   117 00000104 0F84B9010000            je closeDisplay						; on saute au label 'closeDisplay' qui ferme la fenêtre
+   118 0000010A EBCF                    jmp boucle
+   119                                  
+   120                                  ;#########################################
+   121                                  ;#		DEBUT DE LA ZONE DE DESSIN		 #
+   122                                  ;#########################################
+   123                                  dessin:
+   124 0000010C C70425[C0000000]32-     mov dword[x1],50
+   124 00000114 000000             
+   125 00000117 C70425[C8000000]32-     mov dword[y1],50
+   125 0000011F 000000             
+   126 00000122 C70425[C4000000]C8-     mov dword[x2],200
+   126 0000012A 000000             
+   127 0000012D C70425[CC000000]5E-     mov dword[y2],350
+   127 00000135 010000             
+   128                                  ; dessin de ligne
+   129                                  
+   130 00000138 488B3C25[00000000]      mov rdi,qword[display_name]
+   131 00000140 488B3425[1C000000]      mov rsi,qword[window]
+   132 00000148 488B1425[24000000]      mov rdx,qword[gc]
+   133 00000150 8B0C25[C0000000]        mov ecx,dword[x1]	; coordonnée source en x
+   134 00000157 448B0425[C8000000]      mov r8d,dword[y1]	; coordonnée source en y
+   135 0000015F 448B0C25[C4000000]      mov r9d,dword[x2]	; coordonnée destination en x
+   136 00000167 FF3425[CC000000]        push qword[y2]		; coordonnée destination en y
+   137 0000016E E8(00000000)            call XDrawLine
+   138                                  
+   139 00000173 C70425[C0000000]32-     mov dword[x1],50
+   139 0000017B 000000             
+   140 0000017E C70425[C8000000]5E-     mov dword[y1],350
+   140 00000186 010000             
+   141 00000189 C70425[C4000000]C8-     mov dword[x2],200
+   141 00000191 000000             
+   142 00000194 C70425[CC000000]32-     mov dword[y2],50
+   142 0000019C 000000             
+   143                                  ; dessin de ligne
+   144                                  
+   145 0000019F 488B3C25[00000000]      mov rdi,qword[display_name]
+   146 000001A7 488B3425[1C000000]      mov rsi,qword[window]
+   147 000001AF 488B1425[24000000]      mov rdx,qword[gc]
+   148 000001B7 8B0C25[C0000000]        mov ecx,dword[x1]	; coordonnée source en x
+   149 000001BE 448B0425[C8000000]      mov r8d,dword[y1]	; coordonnée source en y
+   150 000001C6 448B0C25[C4000000]      mov r9d,dword[x2]	; coordonnée destination en x
+   151 000001CE FF3425[CC000000]        push qword[y2]		; coordonnée destination en y
+   152 000001D5 E8(00000000)            call XDrawLine
+   153                                  	
+   154 000001DA C70425[C0000000]13-     mov dword[x1],275
+   154 000001E2 010000             
+   155 000001E5 C70425[C8000000]32-     mov dword[y1],50
+   155 000001ED 000000             
+   156 000001F0 C70425[C4000000]13-     mov dword[x2],275
+   156 000001F8 010000             
+   157 000001FB C70425[CC000000]5E-     mov dword[y2],350
+   157 00000203 010000             
+   158                                  ; dessin de ligne
+   159                                  
+   160 00000206 488B3C25[00000000]      mov rdi,qword[display_name]
+   161 0000020E 488B3425[1C000000]      mov rsi,qword[window]
+   162 00000216 488B1425[24000000]      mov rdx,qword[gc]
+   163 0000021E 8B0C25[C0000000]        mov ecx,dword[x1]	; coordonnée source en x
+   164 00000225 448B0425[C8000000]      mov r8d,dword[y1]	; coordonnée source en y
+   165 0000022D 448B0C25[C4000000]      mov r9d,dword[x2]	; coordonnée destination en x
+   166 00000235 FF3425[CC000000]        push qword[y2]		; coordonnée destination en y
+   167 0000023C E8(00000000)            call XDrawLine
+   168                                  
+   169 00000241 C70425[C0000000]5E-     mov dword[x1],350
+   169 00000249 010000             
+   170 0000024C C70425[C8000000]32-     mov dword[y1],50
+   170 00000254 000000             
+   171 00000257 C70425[C4000000]5E-     mov dword[x2],350
+   171 0000025F 010000             
+   172 00000262 C70425[CC000000]5E-     mov dword[y2],350
+   172 0000026A 010000             
+   173                                  ; dessin de ligne
+   174                                  
+   175 0000026D 488B3C25[00000000]      mov rdi,qword[display_name]
+   176 00000275 488B3425[1C000000]      mov rsi,qword[window]
+   177 0000027D 488B1425[24000000]      mov rdx,qword[gc]
+   178 00000285 8B0C25[C0000000]        mov ecx,dword[x1]	; coordonnée source en x
+   179 0000028C 448B0425[C8000000]      mov r8d,dword[y1]	; coordonnée source en y
+   180 00000294 448B0C25[C4000000]      mov r9d,dword[x2]	; coordonnée destination en x
+   181 0000029C FF3425[CC000000]        push qword[y2]		; coordonnée destination en y
+   182 000002A3 E8(00000000)            call XDrawLine
+   183                                  
+   184                                  ; ############################
+   185                                  ; # FIN DE LA ZONE DE DESSIN #
+   186                                  ; ############################
+   187 000002A8 EB00                    jmp flush
+   188                                  
+   189                                  flush:
+   190 000002AA 488B3C25[00000000]      mov rdi,qword[display_name]
+   191 000002B2 E8(00000000)            call XFlush
+   192 000002B7 E91FFEFFFF              jmp boucle
+   193 000002BC B822000000              mov rax,34
+   194 000002C1 0F05                    syscall
+   195                                  
+   196                                  closeDisplay:
+   197 000002C3 488B0425[00000000]          mov     rax,qword[display_name]
+   198 000002CB 4889C7                      mov     rdi,rax
+   199 000002CE E8(00000000)                call    XCloseDisplay
+   200 000002D3 4831FF                      xor	    rdi,rdi
+   201 000002D6 E8(00000000)                call    exit
+   202                                  	
