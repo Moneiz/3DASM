@@ -17,6 +17,7 @@ extern printf
 extern exit
 
 extern projectVect
+extern canShow
 
 %define	StructureNotifyMask	131072
 %define KeyPressMask		1
@@ -54,8 +55,8 @@ pt2:    db  10, -10,-10
 pt3:    db  10, 10,-10
 pt4:    db  -10,10,-10
 pt5:    db  -10,10,10
-pt6:    db  10, 10,10
-pt7:    db  10,-10,10
+pt6:    db  20, 10,10
+pt7:    db  20,-10,10
 pt8:    db  -10,-10,10
 
 ;2d coords projection
@@ -179,6 +180,34 @@ forfaces:
  mov al,4
  mul cl
  add rbx,rax ; rbx = address face itérée
+ 
+ push rcx
+ mov rcx, pjpt1
+ mov ah,8
+ mov al, [rbx]
+ mul ah
+ add rcx, rax
+ mov rdi,rcx  ; vector-pos 1
+
+ mov rcx, pjpt1
+ mov ah,8
+ mov al, [rbx+1]
+ mul ah
+ add rcx, rax
+ mov rsi,rcx
+ 
+ mov rcx, pjpt1
+ mov ah,8
+ mov al, [rbx+2]
+ mul ah
+ add rcx, rax
+ mov rdx,rcx
+ 
+ call canShow
+ pop rcx
+ 
+ cmp rax,1
+ jne endforfaces
     
  push rcx ; empilement de rcx
 
@@ -321,7 +350,8 @@ forfaces:
   
   pop rcx
  
-
+ endforfaces:
+ 
  
  inc cl
  cmp cl, 6
