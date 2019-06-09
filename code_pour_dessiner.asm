@@ -55,8 +55,8 @@ pt2:    db  10, -10,-10
 pt3:    db  10, 10,-10
 pt4:    db  -10,10,-10
 pt5:    db  -10,10,10
-pt6:    db  20, 10,10
-pt7:    db  20,-10,10
+pt6:    db  10,10,10
+pt7:    db  10,-10,10
 pt8:    db  -10,-10,10
 
 ;2d coords projection
@@ -69,6 +69,7 @@ pjpt6:  dd  0,0
 pjpt7:  dd  0,0
 pjpt8:  dd  0,0
 
+; faces map
 face1:  db  0,1,2,3
 face2:  db  1,4,7,2
 face3:  db  4,5,6,7
@@ -76,8 +77,10 @@ face4:  db  5,0,3,6
 face5:  db  5,4,1,0
 face6:  db  3,2,7,6
 
+; debug message 
+faceMsg: db "Face %hhd",10,0
 
-;to delete
+;coords buffer
 x1:     dd  0
 x2:     dd  0
 y1:     dd  0
@@ -154,64 +157,89 @@ jmp boucle
 ;#########################################
 dessin:
 
-mov cl,0
+mov cl,0 ; compteur à zero
 
-forpts:
- mov rbx,pt1
+forpts: ; boucle for
+
+ ;passation du paramètre des points 3D
+ mov rbx,pt1 
+ xor rax,rax
  mov al,3
  mul cl
  add rbx,rax
  mov rdi, rbx
  
+ ;passation du paramètre des points 2D
  mov rbx,pjpt1
+ xor rax,rax
  mov al,8
  mul cl
  add rbx,rax
  mov rsi, rbx
  
+ ;Appel de la fonction:
+ ; projectVect(vec3 rdi,vec2 rsi)
  call projectVect
  inc cl
- cmp cl,8
+ cmp cl,8 ; 8 iérations = nb sommets
  jb forpts
  
-mov cl,0
+mov cl,0 ; compteur à zero
 forfaces:
  mov rbx,face1
- mov al,4
+ mov rax,4
  mul cl
- add rbx,rax ; rbx = address face itérée
+ add rbx,rax ; rbx = adresse face itérée
  
  push rcx
+ 
+ ; vecteur position 1  (commun)
  mov rcx, pjpt1
  mov ah,8
  mov al, [rbx]
  mul ah
  add rcx, rax
- mov rdi,rcx  ; vector-pos 1
+ mov rdi,rcx  
 
+ ; vecteur position 2
  mov rcx, pjpt1
  mov ah,8
  mov al, [rbx+1]
  mul ah
  add rcx, rax
- mov rsi,rcx
+ mov rsi,rcx 
  
+ ; vecteur position 3
  mov rcx, pjpt1
  mov ah,8
- mov al, [rbx+2]
+ mov al, [rbx+3]
  mul ah
  add rcx, rax
- mov rdx,rcx
+ mov rdx,rcx 
  
+ ;Appel de la fonction de face
+ ;canShow(vec2 rdi, vec2 rsi, vec rdx) 
  call canShow
+ 
  pop rcx
  
+ ; si la fonction retourne 1,
+ ; on affiche la face
+ ; sinon on continue la boucle
  cmp rax,1
  jne endforfaces
     
  push rcx ; empilement de rcx
 
- 
+  ; debug affiche la face affichées
+  mov rdi, faceMsg
+  mov rsi, rcx
+  mov rax,0
+  call printf
+
+  ; recuperation des coords 2D 
+  ; à partir des  sommets 1
+  ; de la face
   mov rax,0
   mov rcx,pjpt1
   mov al, 8
@@ -224,6 +252,9 @@ forfaces:
   mov ecx, [rax+4]
   mov [y1],ecx
  
+  ; recuperation des coords 2D 
+  ; à partir des  sommets 2
+  ; de la face
   mov rax,0
   mov rcx,pjpt1
   mov al, 8
@@ -236,6 +267,7 @@ forfaces:
   mov ecx, [rax+4]
   mov [y2],ecx
  
+ ; Dessine la ligne entre 1 et 2
   mov rdi,qword[display_name]
   mov rsi,qword[window]
   mov rdx,qword[gc]
@@ -246,6 +278,9 @@ forfaces:
   call XDrawLine
   pop rcx
  
+ ; recuperation des coords 2D 
+  ; à partir des  sommets 2
+  ; de la face
   mov rax,0
   mov rcx,pjpt1
   mov al, 8
@@ -258,6 +293,9 @@ forfaces:
   mov ecx, [rax+4]
   mov [y1],ecx
  
+ ; recuperation des coords 2D 
+  ; à partir des  sommets 3
+  ; de la face
   mov rax,0
   mov rcx,pjpt1
   mov al, 8
@@ -270,6 +308,7 @@ forfaces:
   mov ecx, [rax+4]
   mov [y2],ecx
  
+ ; Dessine la ligne entre 2 et 3
   mov rdi,qword[display_name]
   mov rsi,qword[window]
   mov rdx,qword[gc]
@@ -280,6 +319,9 @@ forfaces:
   call XDrawLine
   pop rcx
   
+  ; recuperation des coords 2D 
+  ; à partir des  sommets 3
+  ; de la face
   mov rax,0
   mov rcx,pjpt1
   mov al, 8
@@ -292,6 +334,9 @@ forfaces:
   mov ecx, [rax+4]
   mov [y1],ecx
  
+ ; recuperation des coords 2D 
+  ; à partir des  sommets 4
+  ; de la face
   mov rax,0
   mov rcx,pjpt1
   mov al, 8
@@ -304,6 +349,7 @@ forfaces:
   mov ecx, [rax+4]
   mov [y2],ecx
  
+ ; Dessine la ligne entre 3 et 4
   mov rdi,qword[display_name]
   mov rsi,qword[window]
   mov rdx,qword[gc]
@@ -314,6 +360,9 @@ forfaces:
   call XDrawLine
   pop rcx
   
+  ; recuperation des coords 2D 
+  ; à partir des  sommets 4
+  ; de la face
   mov rax,0
   mov rcx,pjpt1
   mov al, 8
@@ -326,6 +375,9 @@ forfaces:
   mov ecx, [rax+4]
   mov [y1],ecx
  
+ ; recuperation des coords 2D 
+  ; à partir des  sommets 1
+  ; de la face
   mov rax,0
   mov rcx,pjpt1
   mov al, 8
@@ -338,6 +390,7 @@ forfaces:
   mov ecx, [rax+4]
   mov [y2],ecx
  
+  ; Dessine la ligne entre 4 et 1
   mov rdi,qword[display_name]
   mov rsi,qword[window]
   mov rdx,qword[gc]
@@ -354,7 +407,7 @@ forfaces:
  
  
  inc cl
- cmp cl, 6
+ cmp cl, 6 ; on itère pour les 6 faces
  jb forfaces
 
 
