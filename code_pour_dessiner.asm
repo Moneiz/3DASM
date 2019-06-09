@@ -16,6 +16,8 @@ extern XNextEvent
 extern printf
 extern exit
 
+extern projectVect
+
 %define	StructureNotifyMask	131072
 %define KeyPressMask		1
 %define ButtonPressMask		4
@@ -34,7 +36,7 @@ global main
 
 section .bss
 display_name:	resq	1
-screen:			resd	1
+screen:		resd	1
 depth:         	resd	1
 connection:    	resd	1
 width:         	resd	1
@@ -46,13 +48,42 @@ section .data
 
 event:		times	24 dq 0
 
-x1:	dd	0
-x2:	dd	0
-y1:	dd	0
-y2:	dd	0
+;3d coords
+pt1:    db  -10,-10,-10
+pt2:    db  10, -10,-10
+pt3:    db  10, 10,-10
+pt4:    db  -10,10,-10
+pt5:    db  -10,10,10
+pt6:    db  10, 10,10
+pt7:    db  10,-10,10
+pt8:    db  -10,-10,10
+
+;2d coords projection
+pjpt1:  dd  0,0
+pjpt2:  dd  0,0
+pjpt3:  dd  0,0
+pjpt4:  dd  0,0
+pjpt5:  dd  0,0
+pjpt6:  dd  0,0
+pjpt7:  dd  0,0
+pjpt8:  dd  0,0
+
+face1:  db  0,1,2,3
+face2:  db  1,4,7,2
+face3:  db  4,5,6,7
+face4:  db  5,0,3,6
+face5:  db  5,4,1,0
+face6:  db  3,2,7,6
+
+
+;to delete
+x1:     dd  0
+x2:     dd  0
+y1:     dd  0
+y2:     dd  0
 
 section .text
-	
+
 ;##################################################
 ;########### PROGRAMME PRINCIPAL ##################
 ;##################################################
@@ -121,65 +152,182 @@ jmp boucle
 ;#		DEBUT DE LA ZONE DE DESSIN		 #
 ;#########################################
 dessin:
-mov dword[x1],50
-mov dword[y1],50
-mov dword[x2],200
-mov dword[y2],350
-; dessin de ligne
 
-mov rdi,qword[display_name]
-mov rsi,qword[window]
-mov rdx,qword[gc]
-mov ecx,dword[x1]	; coordonnée source en x
-mov r8d,dword[y1]	; coordonnée source en y
-mov r9d,dword[x2]	; coordonnée destination en x
-push qword[y2]		; coordonnée destination en y
-call XDrawLine
+mov cl,0
 
-mov dword[x1],50
-mov dword[y1],350
-mov dword[x2],200
-mov dword[y2],50
-; dessin de ligne
+forpts:
+ mov rbx,pt1
+ mov al,3
+ mul cl
+ add rbx,rax
+ mov rdi, rbx
+ 
+ mov rbx,pjpt1
+ mov al,8
+ mul cl
+ add rbx,rax
+ mov rsi, rbx
+ 
+ call projectVect
+ inc cl
+ cmp cl,8
+ jb forpts
+ 
+mov cl,0
+forfaces:
+ mov rbx,face1
+ mov al,4
+ mul cl
+ add rbx,rax ; rbx = address face itérée
+    
+ push rcx ; empilement de rcx
 
-mov rdi,qword[display_name]
-mov rsi,qword[window]
-mov rdx,qword[gc]
-mov ecx,dword[x1]	; coordonnée source en x
-mov r8d,dword[y1]	; coordonnée source en y
-mov r9d,dword[x2]	; coordonnée destination en x
-push qword[y2]		; coordonnée destination en y
-call XDrawLine
-	
-mov dword[x1],275
-mov dword[y1],50
-mov dword[x2],275
-mov dword[y2],350
-; dessin de ligne
+ 
+  mov rax,0
+  mov rcx,pjpt1
+  mov al, 8
+  mov ah, [rbx]
+  mul ah
+  add rcx, rax
+  mov rax, rcx
+  mov ecx, [rax]
+  mov [x1],ecx
+  mov ecx, [rax+4]
+  mov [y1],ecx
+ 
+  mov rax,0
+  mov rcx,pjpt1
+  mov al, 8
+  mov ah, [rbx+1]
+  mul ah
+  add rcx, rax
+  mov rax, rcx
+  mov ecx, [rax]
+  mov [x2],ecx
+  mov ecx, [rax+4]
+  mov [y2],ecx
+ 
+  mov rdi,qword[display_name]
+  mov rsi,qword[window]
+  mov rdx,qword[gc]
+  mov ecx,dword[x1]	; coordonnée source en x
+  mov r8d,dword[y1]	; coordonnée source en y
+  mov r9d,dword[x2]	; coordonnée destination en x
+  push qword[y2]		; coordonnée destination en y
+  call XDrawLine
+  pop rcx
+ 
+  mov rax,0
+  mov rcx,pjpt1
+  mov al, 8
+  mov ah, [rbx+1]
+  mul ah
+  add rcx, rax
+  mov rax, rcx
+  mov ecx, [rax]
+  mov [x1],ecx
+  mov ecx, [rax+4]
+  mov [y1],ecx
+ 
+  mov rax,0
+  mov rcx,pjpt1
+  mov al, 8
+  mov ah, [rbx+2]
+  mul ah
+  add rcx, rax
+  mov rax, rcx
+  mov ecx, [rax]
+  mov [x2],ecx
+  mov ecx, [rax+4]
+  mov [y2],ecx
+ 
+  mov rdi,qword[display_name]
+  mov rsi,qword[window]
+  mov rdx,qword[gc]
+  mov ecx,dword[x1]	; coordonnée source en x
+  mov r8d,dword[y1]	; coordonnée source en y
+  mov r9d,dword[x2]	; coordonnée destination en x
+  push qword[y2]		; coordonnée destination en y
+  call XDrawLine
+  pop rcx
+  
+  mov rax,0
+  mov rcx,pjpt1
+  mov al, 8
+  mov ah, [rbx+2]
+  mul ah
+  add rcx, rax
+  mov rax, rcx
+  mov ecx, [rax]
+  mov [x1],ecx
+  mov ecx, [rax+4]
+  mov [y1],ecx
+ 
+  mov rax,0
+  mov rcx,pjpt1
+  mov al, 8
+  mov ah, [rbx+3]
+  mul ah
+  add rcx, rax
+  mov rax, rcx
+  mov ecx, [rax]
+  mov [x2],ecx
+  mov ecx, [rax+4]
+  mov [y2],ecx
+ 
+  mov rdi,qword[display_name]
+  mov rsi,qword[window]
+  mov rdx,qword[gc]
+  mov ecx,dword[x1]	; coordonnée source en x
+  mov r8d,dword[y1]	; coordonnée source en y
+  mov r9d,dword[x2]	; coordonnée destination en x
+  push qword[y2]		; coordonnée destination en y
+  call XDrawLine
+  pop rcx
+  
+  mov rax,0
+  mov rcx,pjpt1
+  mov al, 8
+  mov ah, [rbx+3]
+  mul ah
+  add rcx, rax
+  mov rax, rcx
+  mov ecx, [rax]
+  mov [x1],ecx
+  mov ecx, [rax+4]
+  mov [y1],ecx
+ 
+  mov rax,0
+  mov rcx,pjpt1
+  mov al, 8
+  mov ah, [rbx]
+  mul ah
+  add rcx, rax
+  mov rax, rcx
+  mov ecx, [rax]
+  mov [x2],ecx
+  mov ecx, [rax+4]
+  mov [y2],ecx
+ 
+  mov rdi,qword[display_name]
+  mov rsi,qword[window]
+  mov rdx,qword[gc]
+  mov ecx,dword[x1]	; coordonnée source en x
+  mov r8d,dword[y1]	; coordonnée source en y
+  mov r9d,dword[x2]	; coordonnée destination en x
+  push qword[y2]		; coordonnée destination en y
+  call XDrawLine
+  pop rcx
+  
+  pop rcx
+ 
 
-mov rdi,qword[display_name]
-mov rsi,qword[window]
-mov rdx,qword[gc]
-mov ecx,dword[x1]	; coordonnée source en x
-mov r8d,dword[y1]	; coordonnée source en y
-mov r9d,dword[x2]	; coordonnée destination en x
-push qword[y2]		; coordonnée destination en y
-call XDrawLine
+ 
+ inc cl
+ cmp cl, 6
+ jb forfaces
 
-mov dword[x1],350
-mov dword[y1],50
-mov dword[x2],350
-mov dword[y2],350
-; dessin de ligne
 
-mov rdi,qword[display_name]
-mov rsi,qword[window]
-mov rdx,qword[gc]
-mov ecx,dword[x1]	; coordonnée source en x
-mov r8d,dword[y1]	; coordonnée source en y
-mov r9d,dword[x2]	; coordonnée destination en x
-push qword[y2]		; coordonnée destination en y
-call XDrawLine
 
 ; ############################
 ; # FIN DE LA ZONE DE DESSIN #
