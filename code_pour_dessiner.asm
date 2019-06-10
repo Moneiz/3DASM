@@ -10,6 +10,7 @@ extern XFlush
 extern XCreateGC
 extern XSetForeground
 extern XDrawLine
+extern XClearWindow
 extern XNextEvent
 
 ; external functions from stdio library (ld-linux-x86-64.so.2)    
@@ -18,6 +19,7 @@ extern exit
 
 extern projectVect
 extern canShow
+extern rotate
 
 %define	StructureNotifyMask	131072
 %define KeyPressMask		1
@@ -49,15 +51,25 @@ section .data
 
 event:		times	24 dq 0
 
-;3d coords
+;original 3d coords
+opt1:    db  -10,-10,-10
+opt2:    db  10, -10,-10
+opt3:    db  10, 10,-10
+opt4:    db  -10,10,-10
+opt5:    db  10,-10,10
+opt6:    db  -10,-10,10
+opt7:    db  -10,10,10
+opt8:    db  10,10,10
+
+;modelviewed 3d coords
 pt1:    db  -10,-10,-10
 pt2:    db  10, -10,-10
 pt3:    db  10, 10,-10
 pt4:    db  -10,10,-10
-pt5:    db  -10,10,10
-pt6:    db  10,10,10
-pt7:    db  10,-10,10
-pt8:    db  -10,-10,10
+pt5:    db  10,-10,10
+pt6:    db  -10,-10,10
+pt7:    db  -10,10,10
+pt8:    db  10,10,10
 
 ;2d coords projection
 pjpt1:  dd  0,0
@@ -69,6 +81,11 @@ pjpt6:  dd  0,0
 pjpt7:  dd  0,0
 pjpt8:  dd  0,0
 
+;rotation
+rotx:   db  0
+roty:   db  0
+rotz:   db  0
+
 ; faces map
 face1:  db  0,1,2,3
 face2:  db  1,4,7,2
@@ -77,7 +94,8 @@ face4:  db  5,0,3,6
 face5:  db  5,4,1,0
 face6:  db  3,2,7,6
 
-; debug message 
+; debug message
+vertex: db "Vertex %hhd -> %hhd,%hhd",10,0 
 faceMsg: db "Face %hhd",10,0
 
 ;coords buffer
@@ -98,7 +116,8 @@ call    XOpenDisplay	; Création de display
 mov     qword[display_name],rax	; rax=nom du display
 
 ; display_name structure
-; screen = DefaultScreen(display_name);
+; screen = Default
+;Screen(display_name);
 mov     rax,qword[display_name]
 mov     eax,dword[rax+0xe0]
 mov     dword[screen],eax
@@ -149,17 +168,62 @@ cmp dword[event],ConfigureNotify	; à l'apparition de la fenêtre
 je dessin							; on saute au label 'dessin'
 
 cmp dword[event],KeyPress			; Si on appuie sur une touche
-je closeDisplay						; on saute au label 'closeDisplay' qui ferme la fenêtre
+je rotation_event						; on saute au label 'closeDisplay' qui ferme la fenêtre
 jmp boucle
 
 ;#########################################
 ;#		DEBUT DE LA ZONE DE DESSIN		 #
 ;#########################################
+rotation_event:
+    mov rdi,qword[display_name]
+    mov rsi,qword[window] 
+    call XClearWindow
+
+    mov al, 10
+    add [rotx],al
+    jmp dessin
+
 dessin:
 
-mov cl,0 ; compteur à zero
+
+
+mov rcx,0 ; compteur à zero
 
 forpts: ; boucle for
+
+ push rcx
+
+ mov rdi,[rotx]
+ mov rsi,[roty]
+ mov rdx,[rotz]
+ push rcx
+ 
+ mov rbx,opt1 
+ xor rax,rax
+ mov al,3
+ mul cl
+ add rbx,rax
+ mov r8, rbx
+ 
+ mov rbx,pt1 
+ xor rax,rax
+ mov al,3
+ mul cl
+ add rbx,rax
+ mov rcx, rbx
+
+ call rotate
+ 
+ pop rcx
+ 
+ ;push rcx
+ ;mov rdi, vertex
+ ;mov rsi, rcx
+ ;mov rdx, [rbx+1]
+ ;mov rcx, [rbx+2]
+ ;mov rax,0
+ ;call printf
+ ;pop rcx
 
  ;passation du paramètre des points 3D
  mov rbx,pt1 
@@ -177,9 +241,12 @@ forpts: ; boucle for
  add rbx,rax
  mov rsi, rbx
  
+ 
  ;Appel de la fonction:
  ; projectVect(vec3 rdi,vec2 rsi)
  call projectVect
+ 
+ pop rcx
  inc cl
  cmp cl,8 ; 8 iérations = nb sommets
  jb forpts
@@ -229,6 +296,20 @@ forfaces:
  cmp rax,1
  jne endforfaces
     
+ ;greyfaces:
+ ;   mov rdi,qword[display_name]
+ ;   mov rsi,qword[gc]
+ ;   mov rdx,0x333333	; Couleur du crayon
+ ;   call XSetForeground
+ ;   jmp after_face_color
+ ;whitefaces:
+ ;   mov rdi,qword[display_name]
+ ;   mov rsi,qword[gc]
+ ;   mov rdx,0xFFFFFF	; Couleur du crayon
+ ;   call XSetForeground
+ ;   jmp after_face_color
+ ;after_face_color:
+ 
  push rcx ; empilement de rcx
 
   ; debug affiche la face affichées

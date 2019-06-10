@@ -2,8 +2,10 @@ extern printf
  
 global projectVect
 global canShow
+global rotate
 
 debug_: db "%d",10,0
+demiangle: dd 180
 
 projectVect:
     
@@ -16,31 +18,31 @@ projectVect:
     
     ; Calcul X' à partie X et Z
     movsx ax, BYTE[rdi]
-    mov cx, 30
+    mov cx, 180
     imul cx
     mov [rbp-2],dx
     mov [rbp-4],ax
     mov eax,[rbp-4]
     movsx ecx,BYTE[rdi+2]
-    add ecx,2
+    add ecx,40
     cdq
     idiv ecx
-    add eax,100
+    add eax,200
     mov [rsi], eax
     
     ; Calcul Y' depuis Y et Z
     xor rax,rax ; rax à 0
     movsx ax, BYTE[rdi+1] ; ax = Y
-    mov cx, 30 ; cx = df
+    mov cx, 220; cx = df
     imul cx 
     mov [rbp-2],dx
     mov [rbp-4],ax
     mov eax,[rbp-4] ; eax=(Y*df)
     movsx ecx,BYTE[rdi+2] ; ecx = Z
-    add ecx,2 ; ecx = Zoff
+    add ecx,40 ; ecx = Zoff
     cdq ; important : coords 3D pouvant être négative
     idiv ecx ; eax = (Y*df)/(Zoff+Z)
-    add eax,100 ; eax = (Y*df)/(Zoff+Z) + Yoff
+    add eax,200 ; eax = (Y*df)/(Zoff+Z) + Yoff
     mov [rsi+4], eax
     
     add rsp,16
@@ -118,3 +120,72 @@ canShow:
    pop rbp
 
    ret
+
+; rotate(char rdi, char rsi, char rdx
+; vec3* rcx)
+; - rdi - X_rotation
+; - rsi - Y_rotation
+; - rdx - Z_rotation
+; - rcx - address_sommet
+rotate:
+
+    push rbp
+    mov rbp,rsp
+
+    sub rsp, 48
+    
+    movsx eax,BYTE[r8]
+    mov [rbp-4], eax ; X en variable locale
+    
+    movsx eax,BYTE[r8+1]
+    mov [rbp-8], eax ; Y en variable locale
+    
+    movsx eax,BYTE[r8+2]
+    mov [rbp-12], eax ; Z en variable locale
+    
+    mov [rbp-16],edi ; x_rotation
+    
+    fldpi
+    fimul dword[rbp-16]
+    fidiv dword[demiangle]
+    fsincos
+    fstp dword[rbp-20] ; cos(x)
+    fstp dword[rbp-24] ; sin(x)
+    
+    ; y' calcule
+    fld dword[rbp-20]
+    fimul dword[rbp-8] ; y*cos(x)
+    fstp dword[rbp-28]
+    
+    fld dword[rbp-24]
+    fimul dword[rbp-12] ; z*sin(x)
+    fstp dword[rbp-32]
+    
+    fld dword[rbp-28]
+    fsub dword[rbp-32] ; y*cos(x) - z*sin(x)
+    fistp dword[rbp-36]
+    
+    mov al, byte[rbp-36]
+    mov BYTE[rcx+1],al
+    
+    ; z' calcule
+    fld dword[rbp-20]
+    fimul dword[rbp-12] ; z*cos(x)
+    fstp dword[rbp-28]
+    
+    fld dword[rbp-24]
+    fimul dword[rbp-8] ; y*sin(x)
+    fstp dword[rbp-32]
+    
+    fld dword[rbp-28]
+    fadd dword[rbp-32] ; z*cos(x) + y*sin(x)
+    fistp dword[rbp-36]
+    
+    mov al, byte[rbp-36]
+    mov BYTE[rcx+2],al
+    
+    add rsp, 48
+    
+    mov rsp, rbp
+    pop rbp
+    ret
