@@ -181,6 +181,8 @@ rotation_event:
 
     mov al, 10
     add [rotx],al
+    mov al, 5
+    add [roty],al
     jmp dessin
 
 dessin:
@@ -193,9 +195,9 @@ forpts: ; boucle for
 
  push rcx
 
- mov rdi,[rotx]
- mov rsi,[roty]
- mov rdx,[rotz]
+ movsx rdi,byte[rotx]
+ movsx rsi,byte[roty]
+ movsx rdx,byte[rotz]
  push rcx
  
  mov rbx,opt1 

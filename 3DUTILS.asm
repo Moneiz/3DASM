@@ -144,7 +144,10 @@ rotate:
     mov [rbp-12], eax ; Z en variable locale
     
     mov [rbp-16],edi ; x_rotation
+    mov [rbp-40],esi ; y_rotation
+    mov [rbp-44],edx ; z_rotation
     
+    ; APPLY X ROTATION
     fldpi
     fimul dword[rbp-16]
     fidiv dword[demiangle]
@@ -166,7 +169,8 @@ rotate:
     fistp dword[rbp-36]
     
     mov al, byte[rbp-36]
-    mov BYTE[rcx+1],al
+    mov BYTE[rcx+1],al ; update ypos by y'
+    
     
     ; z' calcule
     fld dword[rbp-20]
@@ -182,7 +186,55 @@ rotate:
     fistp dword[rbp-36]
     
     mov al, byte[rbp-36]
+    mov BYTE[rcx+2],al ; update ypos by y'
+    
+    movsx eax,BYTE[rcx+1]
+    mov [rbp-8], eax ; Y en variable locale
+    
+    movsx eax,BYTE[rcx+2]
+    mov [rbp-12], eax ; Z en variable locale
+    
+    ; APPLY Y ROTATION
+    fldpi
+    fimul dword[rbp-40] ; y
+    fidiv dword[demiangle]
+    fsincos
+    fstp dword[rbp-20] ; cos(y)
+    fstp dword[rbp-24] ; sin(y)
+    
+    ; y' calcule
+    fld dword[rbp-20]
+    fimul dword[rbp-4] ; x*cos(y)
+    fstp dword[rbp-28]
+    
+    fld dword[rbp-24]
+    fimul dword[rbp-12] ; z*sin(y)
+    fstp dword[rbp-32]
+    
+    fld dword[rbp-28]
+    fadd dword[rbp-32] ; x*cos(y) + z*sin(y)
+    fistp dword[rbp-36]
+    
+    mov al, byte[rbp-36]
+    mov BYTE[rcx],al
+    
+    
+    ; z' calcule
+    fld dword[rbp-20]
+    fimul dword[rbp-12] ; z*cos(y)
+    fstp dword[rbp-28]
+    
+    fld dword[rbp-24]
+    fimul dword[rbp-4] ; x*sin(y)
+    fstp dword[rbp-32]
+    
+    fld dword[rbp-28]
+    fsub dword[rbp-32] ; z*cos(y) - x*sin(y)
+    fistp dword[rbp-36]
+    
+    mov al, byte[rbp-36]
     mov BYTE[rcx+2],al
+
     
     add rsp, 48
     
