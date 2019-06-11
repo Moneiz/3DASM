@@ -3,6 +3,7 @@ extern printf
 global projectVect
 global canShow
 global rotate
+global scale
 
 debug_: db "%d",10,0
 demiangle: dd 180
@@ -17,14 +18,14 @@ projectVect:
     sub rsp,16 ; variables locales
     
     ; Calcul X' à partie X et Z
-    movsx ax, BYTE[rdi]
+    mov ax, WORD[rdi]
     mov cx, 180
     imul cx
     mov [rbp-2],dx
     mov [rbp-4],ax
     mov eax,[rbp-4]
-    movsx ecx,BYTE[rdi+2]
-    add ecx,40
+    movsx ecx,Word[rdi+4]
+    add ecx,80
     cdq
     idiv ecx
     add eax,200
@@ -32,14 +33,14 @@ projectVect:
     
     ; Calcul Y' depuis Y et Z
     xor rax,rax ; rax à 0
-    movsx ax, BYTE[rdi+1] ; ax = Y
+    mov ax, Word[rdi+2] ; ax = Y
     mov cx, 220; cx = df
     imul cx 
     mov [rbp-2],dx
     mov [rbp-4],ax
     mov eax,[rbp-4] ; eax=(Y*df)
-    movsx ecx,BYTE[rdi+2] ; ecx = Z
-    add ecx,40 ; ecx = Zoff
+    movsx ecx,Word[rdi+4] ; ecx = Z
+    add ecx,80 ; ecx = Zoff
     cdq ; important : coords 3D pouvant être négative
     idiv ecx ; eax = (Y*df)/(Zoff+Z)
     add eax,200 ; eax = (Y*df)/(Zoff+Z) + Yoff
@@ -122,25 +123,26 @@ canShow:
    ret
 
 ; rotate(char rdi, char rsi, char rdx
-; vec3* rcx)
+; vec3* rcx,vec3* r8)
 ; - rdi - X_rotation
 ; - rsi - Y_rotation
 ; - rdx - Z_rotation
-; - rcx - address_sommet
+; - r8 - address_sommet_origin
+; - rcx - address_sommet_modelviewed
 rotate:
 
     push rbp
     mov rbp,rsp
 
-    sub rsp, 48
+    sub rsp, 48 ; voir fiche variable
     
-    movsx eax,BYTE[r8]
+    movsx eax,word[r8]
     mov [rbp-4], eax ; X en variable locale
     
-    movsx eax,BYTE[r8+1]
+    movsx eax,word[r8+2]
     mov [rbp-8], eax ; Y en variable locale
     
-    movsx eax,BYTE[r8+2]
+    movsx eax,word[r8+4]
     mov [rbp-12], eax ; Z en variable locale
     
     mov [rbp-16],edi ; x_rotation
@@ -168,8 +170,8 @@ rotate:
     fsub dword[rbp-32] ; y*cos(x) - z*sin(x)
     fistp dword[rbp-36]
     
-    mov al, byte[rbp-36]
-    mov BYTE[rcx+1],al ; update ypos by y'
+    mov ax, word[rbp-36]
+    mov WORD[rcx+2],ax ; update ypos by y'
     
     
     ; z' calcule
@@ -185,14 +187,14 @@ rotate:
     fadd dword[rbp-32] ; z*cos(x) + y*sin(x)
     fistp dword[rbp-36]
     
-    mov al, byte[rbp-36]
-    mov BYTE[rcx+2],al ; update ypos by y'
+    mov ax, WORD[rbp-36]
+    mov WORD[rcx+4],ax ; update ypos by y'
     
-    movsx eax,BYTE[rcx+1]
-    mov [rbp-8], eax ; Y en variable locale
+    movsx eax,word[rcx+2]
+    mov [rbp-8], eax ; mise à jour de y
     
-    movsx eax,BYTE[rcx+2]
-    mov [rbp-12], eax ; Z en variable locale
+    movsx eax,word[rcx+4]
+    mov [rbp-12], eax ; mise à jour de z
     
     ; APPLY Y ROTATION
     fldpi
@@ -215,8 +217,8 @@ rotate:
     fadd dword[rbp-32] ; x*cos(y) + z*sin(y)
     fistp dword[rbp-36]
     
-    mov al, byte[rbp-36]
-    mov BYTE[rcx],al
+    mov ax, WORD[rbp-36]
+    mov WORD[rcx],ax
     
     
     ; z' calcule
@@ -232,11 +234,104 @@ rotate:
     fsub dword[rbp-32] ; z*cos(y) - x*sin(y)
     fistp dword[rbp-36]
     
-    mov al, byte[rbp-36]
-    mov BYTE[rcx+2],al
+    mov ax, WORD[rbp-36]
+    mov WORD[rcx+4],ax
+    
+    movsx eax,WORD[rcx]
+    mov [rbp-4], eax ; mise à jour de x
+    
+    movsx eax,WORD[rcx+4]
+    mov [rbp-12], eax ; mise à jour de z
 
+    ; APPLY Z ROTATION
+    fldpi
+    fimul dword[rbp-44] ; z
+    fidiv dword[demiangle]
+    fsincos
+    fstp dword[rbp-20] ; cos(z)
+    fstp dword[rbp-24] ; sin(z)
+    
+    ; x' calcule
+    fld dword[rbp-20]
+    fimul dword[rbp-4] ; x*cos(z)
+    fstp dword[rbp-28]
+    
+    fld dword[rbp-24]
+    fimul dword[rbp-8] ; y*sin(z)
+    fstp dword[rbp-32]
+    
+    fld dword[rbp-28]
+    fsub dword[rbp-32] ; x*cos(z) - y*sin(z)
+    fistp dword[rbp-36]
+    
+    mov ax, WORD[rbp-36]
+    mov WORD[rcx],ax
+    
+    
+    ; y' calcule
+    fld dword[rbp-20]
+    fimul dword[rbp-8] ; y*cos(z)
+    fstp dword[rbp-28]
+    
+    fld dword[rbp-24]
+    fimul dword[rbp-4] ; x*sin(z)
+    fstp dword[rbp-32]
+    
+    fld dword[rbp-28]
+    fadd dword[rbp-32] ; y*cos(z) + x*sin(z)
+    fistp dword[rbp-36]
+    
+    mov ax, WORD[rbp-36]
+    mov WORD[rcx+2],ax
     
     add rsp, 48
+    
+    mov rsp, rbp
+    pop rbp
+    ret
+    
+; rotate(char rdi, char rsi, char rdx
+; vec3* rcx,vec3* r8)
+; - rdi - X_scale
+; - rsi - Y_scale
+; - rdx - Z_scale
+; - rcx - address_sommet_modelviewed
+scale:
+
+    push rbp
+    mov rbp,rsp
+
+    sub rsp, 16 ; voir fiche variable
+    
+    mov ax,word[rcx]
+    mov [rbp-2], ax ; X en variable locale
+    
+    mov ax,word[rcx+2]
+    mov [rbp-4], ax ; Y en variable locale
+    
+    mov ax,word[rcx+4]
+    mov [rbp-6], ax ; Z en variable locale
+    
+    mov [rbp-8],di ; x_scale
+    mov [rbp-10],si ; y_scale
+    mov [rbp-12],dx ; z_scale
+    
+    mov ax, [rbp-2]
+    mov bx, [rbp-8]
+    imul bx
+    mov [rcx],ax
+    
+    mov ax, [rbp-4]
+    mov bx, [rbp-10]
+    imul bx
+    mov [rcx+2],ax
+    
+    mov ax, [rbp-6]
+    mov bx, [rbp-12]
+    imul bx
+    mov [rcx+4],ax
+    
+    add rsp, 16
     
     mov rsp, rbp
     pop rbp

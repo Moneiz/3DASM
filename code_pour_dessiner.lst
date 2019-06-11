@@ -20,522 +20,552 @@
     20                                  extern projectVect
     21                                  extern canShow
     22                                  extern rotate
-    23                                  
-    24                                  %define	StructureNotifyMask	131072
-    25                                  %define KeyPressMask		1
-    26                                  %define ButtonPressMask		4
-    27                                  %define MapNotify		19
-    28                                  %define KeyPress		2
-    29                                  %define ButtonPress		4
-    30                                  %define Expose			12
-    31                                  %define ConfigureNotify		22
-    32                                  %define CreateNotify 16
-    33                                  %define QWORD	8
-    34                                  %define DWORD	4
-    35                                  %define WORD	2
-    36                                  %define BYTE	1
-    37                                  
-    38                                  global main
-    39                                  
-    40                                  section .bss
-    41 00000000 <res 00000008>          display_name:	resq	1
-    42 00000008 <res 00000004>          screen:		resd	1
-    43 0000000C <res 00000004>          depth:         	resd	1
-    44 00000010 <res 00000004>          connection:    	resd	1
-    45 00000014 <res 00000004>          width:         	resd	1
-    46 00000018 <res 00000004>          height:        	resd	1
-    47 0000001C <res 00000008>          window:		resq	1
-    48 00000024 <res 00000008>          gc:		resq	1
-    49                                  
-    50                                  section .data
-    51                                  
-    52 00000000 0000000000000000-       event:		times	24 dq 0
-    52 00000000 <rept>             
-    53                                  
-    54                                  ;original 3d coords
-    55 000000C0 F6F6F6                  opt1:    db  -10,-10,-10
-    56 000000C3 0AF6F6                  opt2:    db  10, -10,-10
-    57 000000C6 0A0AF6                  opt3:    db  10, 10,-10
-    58 000000C9 F60AF6                  opt4:    db  -10,10,-10
-    59 000000CC 0AF60A                  opt5:    db  10,-10,10
-    60 000000CF F6F60A                  opt6:    db  -10,-10,10
-    61 000000D2 F60A0A                  opt7:    db  -10,10,10
-    62 000000D5 0A0A0A                  opt8:    db  10,10,10
-    63                                  
-    64                                  ;modelviewed 3d coords
-    65 000000D8 F6F6F6                  pt1:    db  -10,-10,-10
-    66 000000DB 0AF6F6                  pt2:    db  10, -10,-10
-    67 000000DE 0A0AF6                  pt3:    db  10, 10,-10
-    68 000000E1 F60AF6                  pt4:    db  -10,10,-10
-    69 000000E4 0AF60A                  pt5:    db  10,-10,10
-    70 000000E7 F6F60A                  pt6:    db  -10,-10,10
-    71 000000EA F60A0A                  pt7:    db  -10,10,10
-    72 000000ED 0A0A0A                  pt8:    db  10,10,10
-    73                                  
-    74                                  ;2d coords projection
-    75 000000F0 0000000000000000        pjpt1:  dd  0,0
-    76 000000F8 0000000000000000        pjpt2:  dd  0,0
-    77 00000100 0000000000000000        pjpt3:  dd  0,0
-    78 00000108 0000000000000000        pjpt4:  dd  0,0
-    79 00000110 0000000000000000        pjpt5:  dd  0,0
-    80 00000118 0000000000000000        pjpt6:  dd  0,0
-    81 00000120 0000000000000000        pjpt7:  dd  0,0
-    82 00000128 0000000000000000        pjpt8:  dd  0,0
-    83                                  
-    84                                  ;rotation
-    85 00000130 00                      rotx:   db  0
-    86 00000131 00                      roty:   db  0
-    87 00000132 00                      rotz:   db  0
-    88                                  
-    89                                  ; faces map
-    90 00000133 00010203                face1:  db  0,1,2,3
-    91 00000137 01040702                face2:  db  1,4,7,2
-    92 0000013B 04050607                face3:  db  4,5,6,7
-    93 0000013F 05000306                face4:  db  5,0,3,6
-    94 00000143 05040100                face5:  db  5,4,1,0
-    95 00000147 03020706                face6:  db  3,2,7,6
+    23                                  extern scale
+    24                                  
+    25                                  %define	StructureNotifyMask	131072
+    26                                  %define KeyPressMask		1
+    27                                  %define ButtonPressMask		4
+    28                                  %define MapNotify		19
+    29                                  %define KeyPress		2
+    30                                  %define ButtonPress		4
+    31                                  %define Expose			12
+    32                                  %define ConfigureNotify		22
+    33                                  %define CreateNotify 16
+    34                                  %define QWORD	8
+    35                                  %define DWORD	4
+    36                                  %define WORD	2
+    37                                  %define BYTE	1
+    38                                  
+    39                                  global main
+    40                                  
+    41                                  section .bss
+    42 00000000 <res 00000008>          display_name:	resq	1
+    43 00000008 <res 00000004>          screen:		resd	1
+    44 0000000C <res 00000004>          depth:         	resd	1
+    45 00000010 <res 00000004>          connection:    	resd	1
+    46 00000014 <res 00000004>          width:         	resd	1
+    47 00000018 <res 00000004>          height:        	resd	1
+    48 0000001C <res 00000008>          window:		resq	1
+    49 00000024 <res 00000008>          gc:		resq	1
+    50                                  
+    51                                  section .data
+    52                                  
+    53 00000000 0000000000000000-       event:		times	24 dq 0
+    53 00000000 <rept>             
+    54                                  
+    55                                  ;original 3d coords
+    56 000000C0 F6FFF6FFF6FF            opt1:    dw  -10,-10,-10
+    57 000000C6 0A00F6FFF6FF            opt2:    dw  10, -10,-10
+    58 000000CC 0A000A00F6FF            opt3:    dw  10, 10,-10
+    59 000000D2 F6FF0A00F6FF            opt4:    dw  -10,10,-10
+    60 000000D8 0A00F6FF0A00            opt5:    dw  10,-10,10
+    61 000000DE F6FFF6FF0A00            opt6:    dw  -10,-10,10
+    62 000000E4 F6FF0A000A00            opt7:    dw  -10,10,10
+    63 000000EA 0A000A000A00            opt8:    dw  10,10,10
+    64 000000F0 000019000000            opt9:    dw  0,25,0
+    65 000000F6 0000E7FF0000            opt10:  dw  0,-25,0
+    66                                  
+    67                                  
+    68                                  ;modelviewed 3d coords
+    69 000000FC F6FFF6FFF6FF            pt1:    dw  -10,-10,-10
+    70 00000102 0A00F6FFF6FF            pt2:    dw  10, -10,-10
+    71 00000108 0A000A00F6FF            pt3:    dw  10, 10,-10
+    72 0000010E F6FF0A00F6FF            pt4:    dw  -10,10,-10
+    73 00000114 0A00F6FF0A00            pt5:    dw  10,-10,10
+    74 0000011A F6FFF6FF0A00            pt6:    dw  -10,-10,10
+    75 00000120 F6FF0A000A00            pt7:    dw  -10,10,10
+    76 00000126 0A000A000A00            pt8:    dw  10,10,10
+    77 0000012C 00000F000000            pt9:    dw  0,15,0  ;extra
+    78 00000132 0000F1FF0000            pt10:   dw  0,-15,0
+    79                                  
+    80                                  ;2d coords projection
+    81 00000138 0000000000000000        pjpt1:  dd  0,0
+    82 00000140 0000000000000000        pjpt2:  dd  0,0
+    83 00000148 0000000000000000        pjpt3:  dd  0,0
+    84 00000150 0000000000000000        pjpt4:  dd  0,0
+    85 00000158 0000000000000000        pjpt5:  dd  0,0
+    86 00000160 0000000000000000        pjpt6:  dd  0,0
+    87 00000168 0000000000000000        pjpt7:  dd  0,0
+    88 00000170 0000000000000000        pjpt8:  dd  0,0
+    89 00000178 0000000000000000        pjpt9:  dd  0,0
+    90 00000180 0000000000000000        pjpt10: dd  0,0
+    91                                  
+    92                                  ;rotation
+    93 00000188 0000                    rotx:   dw  0
+    94 0000018A 0000                    roty:   dw  0
+    95 0000018C 0000                    rotz:   dw  0
     96                                  
-    97                                  ; debug message
-    98 0000014B 566572746578202568-     vertex: db "Vertex %hhd -> %hhd,%hhd",10,0 
-    98 00000154 6864202D3E20256868-
-    98 0000015D 642C256868640A00   
-    99 00000165 466163652025686864-     faceMsg: db "Face %hhd",10,0
-    99 0000016E 0A00               
-   100                                  
-   101                                  ;coords buffer
-   102 00000170 00000000                x1:     dd  0
-   103 00000174 00000000                x2:     dd  0
-   104 00000178 00000000                y1:     dd  0
-   105 0000017C 00000000                y2:     dd  0
-   106                                  
-   107                                  section .text
-   108                                  
-   109                                  ;##################################################
-   110                                  ;########### PROGRAMME PRINCIPAL ##################
-   111                                  ;##################################################
-   112                                  
-   113                                  main:
-   114 00000000 4831FF                  xor     rdi,rdi
-   115 00000003 E8(00000000)            call    XOpenDisplay	; Création de display
-   116 00000008 48890425[00000000]      mov     qword[display_name],rax	; rax=nom du display
-   117                                  
-   118                                  ; display_name structure
-   119                                  ; screen = Default
-   120                                  ;Screen(display_name);
-   121 00000010 488B0425[00000000]      mov     rax,qword[display_name]
-   122 00000018 8B80E0000000            mov     eax,dword[rax+0xe0]
-   123 0000001E 890425[08000000]        mov     dword[screen],eax
-   124                                  
-   125 00000025 488B3C25[00000000]      mov rdi,qword[display_name]
-   126 0000002D 8B3425[08000000]        mov esi,dword[screen]
-   127 00000034 E8(00000000)            call XRootWindow
-   128 00000039 4889C3                  mov rbx,rax
-   129                                  
-   130 0000003C 488B3C25[00000000]      mov rdi,qword[display_name]
-   131 00000044 4889DE                  mov rsi,rbx
-   132 00000047 BA0A000000              mov rdx,10
-   133 0000004C B90A000000              mov rcx,10
-   134 00000051 41B890010000            mov r8,400	; largeur
-   135 00000057 41B990010000            mov r9,400	; hauteur
-   136 0000005D 6A00                    push 0x000000	; background  0xRRGGBB
-   137 0000005F 6800FF0000              push 0x00FF00
-   138 00000064 6A01                    push 1
-   139 00000066 E8(00000000)            call XCreateSimpleWindow
-   140 0000006B 48890425[1C000000]      mov qword[window],rax
-   141                                  
-   142 00000073 488B3C25[00000000]      mov rdi,qword[display_name]
-   143 0000007B 488B3425[1C000000]      mov rsi,qword[window]
-   144 00000083 BA05000200              mov rdx,131077 ;131072
-   145 00000088 E8(00000000)            call XSelectInput
-   146                                  
-   147 0000008D 488B3C25[00000000]      mov rdi,qword[display_name]
-   148 00000095 488B3425[1C000000]      mov rsi,qword[window]
-   149 0000009D E8(00000000)            call XMapWindow
-   150                                  
-   151 000000A2 488B3425[1C000000]      mov rsi,qword[window]
-   152 000000AA BA00000000              mov rdx,0
-   153 000000AF B900000000              mov rcx,0
-   154 000000B4 E8(00000000)            call XCreateGC
-   155 000000B9 48890425[24000000]      mov qword[gc],rax
-   156                                  
-   157 000000C1 488B3C25[00000000]      mov rdi,qword[display_name]
-   158 000000C9 488B3425[24000000]      mov rsi,qword[gc]
-   159 000000D1 BAFFFFFF00              mov rdx,0xFFFFFF	; Couleur du crayon
-   160 000000D6 E8(00000000)            call XSetForeground
-   161                                  
-   162                                  boucle: ; boucle de gestion des évènements
-   163 000000DB 488B3C25[00000000]      mov rdi,qword[display_name]
-   164 000000E3 48BE-                   mov rsi,event
-   164 000000E5 [0000000000000000] 
-   165 000000ED E8(00000000)            call XNextEvent
-   166                                  
-   167 000000F2 833C25[00000000]16      cmp dword[event],ConfigureNotify	; à l'apparition de la fenêtre
-   168 000000FA 7435                    je dessin							; on saute au label 'dessin'
-   169                                  
-   170 000000FC 833C25[00000000]02      cmp dword[event],KeyPress			; Si on appuie sur une touche
-   171 00000104 7402                    je rotation_event						; on saute au label 'closeDisplay' qui ferme la fenêtre
-   172 00000106 EBD3                    jmp boucle
-   173                                  
-   174                                  ;#########################################
-   175                                  ;#		DEBUT DE LA ZONE DE DESSIN		 #
-   176                                  ;#########################################
-   177                                  rotation_event:
-   178 00000108 488B3C25[00000000]          mov rdi,qword[display_name]
-   179 00000110 488B3425[1C000000]          mov rsi,qword[window] 
-   180 00000118 E8(00000000)                call XClearWindow
-   181                                  
-   182 0000011D B00A                        mov al, 10
-   183 0000011F 000425[30010000]            add [rotx],al
-   184 00000126 B005                        mov al, 5
-   185 00000128 000425[31010000]            add [roty],al
-   186 0000012F EB00                        jmp dessin
+    97                                  ; faces map
+    98 0000018E 00010203                face1:  db  0,1,2,3
+    99 00000192 01040702                face2:  db  1,4,7,2
+   100 00000196 04050607                face3:  db  4,5,6,7
+   101 0000019A 05000306                face4:  db  5,0,3,6
+   102 0000019E 06030808                face5:  db  6,3,8,8
+   103 000001A2 03020808                face6:  db  3,2,8,8
+   104 000001A6 02070808                face7:  db  2,7,8,8
+   105 000001AA 07060808                face8:  db  7,6,8,8
+   106 000001AE 04010909                face9:  db  4,1,9,9
+   107 000001B2 01000909                face10: db  1,0,9,9
+   108 000001B6 00050909                face11: db  0,5,9,9
+   109 000001BA 05040909                face12: db  5,4,9,9
+   110                                  
+   111                                  ; debug message
+   112 000001BE 566572746578202568-     vertex: db "Vertex %hhd -> %hhd,%hhd",10,0 
+   112 000001C7 6864202D3E20256868-
+   112 000001D0 642C256868640A00   
+   113 000001D8 466163652025686864-     faceMsg: db "Face %hhd",10,0
+   113 000001E1 0A00               
+   114                                  
+   115                                  ;coords buffer
+   116 000001E3 00000000                x1:     dd  0
+   117 000001E7 00000000                x2:     dd  0
+   118 000001EB 00000000                y1:     dd  0
+   119 000001EF 00000000                y2:     dd  0
+   120                                  
+   121                                  section .text
+   122                                  
+   123                                  ;##################################################
+   124                                  ;########### PROGRAMME PRINCIPAL ##################
+   125                                  ;##################################################
+   126                                  
+   127                                  main:
+   128 00000000 4831FF                  xor     rdi,rdi
+   129 00000003 E8(00000000)            call    XOpenDisplay	; Création de display
+   130 00000008 48890425[00000000]      mov     qword[display_name],rax	; rax=nom du display
+   131                                  
+   132                                  ; display_name structure
+   133                                  ; screen = Default
+   134                                  ;Screen(display_name);
+   135 00000010 488B0425[00000000]      mov     rax,qword[display_name]
+   136 00000018 8B80E0000000            mov     eax,dword[rax+0xe0]
+   137 0000001E 890425[08000000]        mov     dword[screen],eax
+   138                                  
+   139 00000025 488B3C25[00000000]      mov rdi,qword[display_name]
+   140 0000002D 8B3425[08000000]        mov esi,dword[screen]
+   141 00000034 E8(00000000)            call XRootWindow
+   142 00000039 4889C3                  mov rbx,rax
+   143                                  
+   144 0000003C 488B3C25[00000000]      mov rdi,qword[display_name]
+   145 00000044 4889DE                  mov rsi,rbx
+   146 00000047 BA0A000000              mov rdx,10
+   147 0000004C B90A000000              mov rcx,10
+   148 00000051 41B890010000            mov r8,400	; largeur
+   149 00000057 41B990010000            mov r9,400	; hauteur
+   150 0000005D 6A00                    push 0x000000	; background  0xRRGGBB
+   151 0000005F 6800FF0000              push 0x00FF00
+   152 00000064 6A01                    push 1
+   153 00000066 E8(00000000)            call XCreateSimpleWindow
+   154 0000006B 48890425[1C000000]      mov qword[window],rax
+   155                                  
+   156 00000073 488B3C25[00000000]      mov rdi,qword[display_name]
+   157 0000007B 488B3425[1C000000]      mov rsi,qword[window]
+   158 00000083 BA05000200              mov rdx,131077 ;131072
+   159 00000088 E8(00000000)            call XSelectInput
+   160                                  
+   161 0000008D 488B3C25[00000000]      mov rdi,qword[display_name]
+   162 00000095 488B3425[1C000000]      mov rsi,qword[window]
+   163 0000009D E8(00000000)            call XMapWindow
+   164                                  
+   165 000000A2 488B3425[1C000000]      mov rsi,qword[window]
+   166 000000AA BA00000000              mov rdx,0
+   167 000000AF B900000000              mov rcx,0
+   168 000000B4 E8(00000000)            call XCreateGC
+   169 000000B9 48890425[24000000]      mov qword[gc],rax
+   170                                  
+   171 000000C1 488B3C25[00000000]      mov rdi,qword[display_name]
+   172 000000C9 488B3425[24000000]      mov rsi,qword[gc]
+   173 000000D1 BA00000000              mov rdx,0x000000 ; Couleur du crayon
+   174 000000D6 E8(00000000)            call XSetForeground
+   175                                  
+   176                                  boucle: ; boucle de gestion des évènements
+   177 000000DB 488B3C25[00000000]      mov rdi,qword[display_name]
+   178 000000E3 48BE-                   mov rsi,event
+   178 000000E5 [0000000000000000] 
+   179 000000ED E8(00000000)            call XNextEvent
+   180                                  
+   181 000000F2 833C25[00000000]16      cmp dword[event],ConfigureNotify	; à l'apparition de la fenêtre
+   182 000000FA 745C                    je dessin							; on saute au label 'dessin'
+   183                                  
+   184 000000FC 833C25[00000000]02      cmp dword[event],KeyPress			; Si on appuie sur une touche
+   185 00000104 7402                    je rotation_event						; on saute au label 'closeDisplay' qui ferme la fenêtre
+   186 00000106 EBD3                    jmp boucle
    187                                  
-   188                                  dessin:
-   189                                  
-   190                                  
-   191                                  
-   192 00000131 B900000000              mov rcx,0 ; compteur à zero
-   193                                  
-   194                                  forpts: ; boucle for
+   188                                  ;#########################################
+   189                                  ;#		DEBUT DE LA ZONE DE DESSIN		 #
+   190                                  ;#########################################
+   191                                  rotation_event:
+   192 00000108 488B3C25[00000000]          mov rdi,qword[display_name]
+   193 00000110 488B3425[1C000000]          mov rsi,qword[window] 
+   194 00000118 E8(00000000)                call XClearWindow
    195                                  
-   196 00000136 51                       push rcx
-   197                                  
-   198 00000137 480FBE3C25-              movsx rdi,byte[rotx]
-   198 0000013C [30010000]         
-   199 00000140 480FBE3425-              movsx rsi,byte[roty]
-   199 00000145 [31010000]         
-   200 00000149 480FBE1425-              movsx rdx,byte[rotz]
-   200 0000014E [32010000]         
-   201 00000152 51                       push rcx
-   202                                   
-   203 00000153 48BB-                    mov rbx,opt1 
-   203 00000155 [C000000000000000] 
-   204 0000015D 4831C0                   xor rax,rax
-   205 00000160 B003                     mov al,3
-   206 00000162 F6E1                     mul cl
-   207 00000164 4801C3                   add rbx,rax
-   208 00000167 4989D8                   mov r8, rbx
-   209                                   
-   210 0000016A 48BB-                    mov rbx,pt1 
-   210 0000016C [D800000000000000] 
-   211 00000174 4831C0                   xor rax,rax
-   212 00000177 B003                     mov al,3
-   213 00000179 F6E1                     mul cl
-   214 0000017B 4801C3                   add rbx,rax
-   215 0000017E 4889D9                   mov rcx, rbx
+   196 0000011D 66B80500                    mov ax, 5
+   197 00000121 66010425[88010000]          add [rotx],ax
+   198 00000129 66B80500                    mov ax, 5
+   199 0000012D 66010425[8A010000]          add [roty],ax
+   200                                      
+   201 00000135 488B3C25[00000000]          mov rdi,qword[display_name]
+   202 0000013D 488B3425[24000000]          mov rsi,qword[gc]
+   203 00000145 BAFF000000                  mov rdx,0x0000FF	; Couleur du crayon
+   204 0000014A 023425[8A010000]            add dh,[roty]
+   205 00000151 E8(00000000)                call XSetForeground
+   206                                      
+   207 00000156 EB00                        jmp dessin
+   208                                      
+   209                                      
+   210                                  
+   211                                  dessin:
+   212                                  
+   213                                  
+   214                                  
+   215 00000158 B900000000              mov rcx,0 ; compteur à zero
    216                                  
-   217 00000181 E8(00000000)             call rotate
-   218                                   
-   219 00000186 59                       pop rcx
-   220                                   
-   221                                   ;push rcx
-   222                                   ;mov rdi, vertex
-   223                                   ;mov rsi, rcx
-   224                                   ;mov rdx, [rbx+1]
-   225                                   ;mov rcx, [rbx+2]
-   226                                   ;mov rax,0
-   227                                   ;call printf
-   228                                   ;pop rcx
-   229                                  
-   230                                   ;passation du paramètre des points 3D
-   231 00000187 48BB-                    mov rbx,pt1 
-   231 00000189 [D800000000000000] 
-   232 00000191 4831C0                   xor rax,rax
-   233 00000194 B003                     mov al,3
-   234 00000196 F6E1                     mul cl
-   235 00000198 4801C3                   add rbx,rax
-   236 0000019B 4889DF                   mov rdi, rbx
-   237                                   
-   238                                   ;passation du paramètre des points 2D
-   239 0000019E 48BB-                    mov rbx,pjpt1
-   239 000001A0 [F000000000000000] 
-   240 000001A8 4831C0                   xor rax,rax
-   241 000001AB B008                     mov al,8
-   242 000001AD F6E1                     mul cl
-   243 000001AF 4801C3                   add rbx,rax
-   244 000001B2 4889DE                   mov rsi, rbx
-   245                                   
+   217                                  forpts: ; boucle for
+   218 0000015D 51                       push rcx
+   219                                  
+   220                                   ;envoie des rotations en paramètre
+   221 0000015E 480FBF3C25-              movsx rdi,word[rotx]
+   221 00000163 [88010000]         
+   222 00000167 480FBF3425-              movsx rsi,word[roty]
+   222 0000016C [8A010000]         
+   223 00000170 480FBF1425-              movsx rdx,word[rotz]
+   223 00000175 [8C010000]         
+   224 00000179 51                       push rcx
+   225                                   
+   226 0000017A 48BB-                    mov rbx,opt1 
+   226 0000017C [C000000000000000] 
+   227 00000184 4831C0                   xor rax,rax
+   228 00000187 B006                     mov al,6
+   229 00000189 F6E1                     mul cl
+   230 0000018B 4801C3                   add rbx,rax
+   231 0000018E 4989D8                   mov r8, rbx
+   232                                   
+   233 00000191 48BB-                    mov rbx,pt1 
+   233 00000193 [FC00000000000000] 
+   234 0000019B 4831C0                   xor rax,rax
+   235 0000019E B006                     mov al,6
+   236 000001A0 F6E1                     mul cl
+   237 000001A2 4801C3                   add rbx,rax
+   238 000001A5 4889D9                   mov rcx, rbx
+   239                                  
+   240 000001A8 E8(00000000)             call rotate
+   241                                   
+   242 000001AD 66B80100                 mov ax,1
+   243 000001B1 480FBFF8                 movsx rdi,ax
+   244 000001B5 480FBFF0                 movsx rsi,ax
+   245 000001B9 480FBFD0                 movsx rdx,ax
    246                                   
-   247                                   ;Appel de la fonction:
-   248                                   ; projectVect(vec3 rdi,vec2 rsi)
-   249 000001B5 E8(00000000)             call projectVect
+   247 000001BD E8(00000000)             call scale
+   248                                   
+   249 000001C2 59                       pop rcx
    250                                   
-   251 000001BA 59                       pop rcx
-   252 000001BB FEC1                     inc cl
-   253 000001BD 80F908                   cmp cl,8 ; 8 iérations = nb sommets
-   254 000001C0 0F8270FFFFFF             jb forpts
-   255                                   
-   256 000001C6 B100                    mov cl,0 ; compteur à zero
-   257                                  forfaces:
-   258 000001C8 48BB-                    mov rbx,face1
-   258 000001CA [3301000000000000] 
-   259 000001D2 B804000000               mov rax,4
-   260 000001D7 F6E1                     mul cl
-   261 000001D9 4801C3                   add rbx,rax ; rbx = adresse face itérée
-   262                                   
-   263 000001DC 51                       push rcx
-   264                                   
-   265                                   ; vecteur position 1  (commun)
-   266 000001DD 48B9-                    mov rcx, pjpt1
-   266 000001DF [F000000000000000] 
-   267 000001E7 B408                     mov ah,8
-   268 000001E9 8A03                     mov al, [rbx]
-   269 000001EB F6E4                     mul ah
-   270 000001ED 4801C1                   add rcx, rax
-   271 000001F0 4889CF                   mov rdi,rcx  
-   272                                  
-   273                                   ; vecteur position 2
-   274 000001F3 48B9-                    mov rcx, pjpt1
-   274 000001F5 [F000000000000000] 
-   275 000001FD B408                     mov ah,8
-   276 000001FF 8A4301                   mov al, [rbx+1]
-   277 00000202 F6E4                     mul ah
-   278 00000204 4801C1                   add rcx, rax
-   279 00000207 4889CE                   mov rsi,rcx 
+   251                                   ;push rcx
+   252                                   ;mov rdi, vertex
+   253                                   ;mov rsi, rcx
+   254                                   ;mov rdx, [rbx+1]
+   255                                   ;mov rcx, [rbx+2]
+   256                                   ;mov rax,0
+   257                                   ;call printf
+   258                                   ;pop rcx
+   259                                  
+   260                                   ;passation du paramètre des points 3D
+   261 000001C3 48BB-                    mov rbx,pt1 
+   261 000001C5 [FC00000000000000] 
+   262 000001CD 4831C0                   xor rax,rax
+   263 000001D0 B006                     mov al,6
+   264 000001D2 F6E1                     mul cl
+   265 000001D4 4801C3                   add rbx,rax
+   266 000001D7 4889DF                   mov rdi, rbx
+   267                                   
+   268                                   ;passation du paramètre des points 2D
+   269 000001DA 48BB-                    mov rbx,pjpt1
+   269 000001DC [3801000000000000] 
+   270 000001E4 4831C0                   xor rax,rax
+   271 000001E7 B008                     mov al,8
+   272 000001E9 F6E1                     mul cl
+   273 000001EB 4801C3                   add rbx,rax
+   274 000001EE 4889DE                   mov rsi, rbx
+   275                                   
+   276                                   
+   277                                   ;Appel de la fonction:
+   278                                   ; projectVect(vec3 rdi,vec2 rsi)
+   279 000001F1 E8(00000000)             call projectVect
    280                                   
-   281                                   ; vecteur position 3
-   282 0000020A 48B9-                    mov rcx, pjpt1
-   282 0000020C [F000000000000000] 
-   283 00000214 B408                     mov ah,8
-   284 00000216 8A4303                   mov al, [rbx+3]
-   285 00000219 F6E4                     mul ah
-   286 0000021B 4801C1                   add rcx, rax
-   287 0000021E 4889CA                   mov rdx,rcx 
-   288                                   
-   289                                   ;Appel de la fonction de face
-   290                                   ;canShow(vec2 rdi, vec2 rsi, vec rdx) 
-   291 00000221 E8(00000000)             call canShow
+   281 000001F6 59                       pop rcx
+   282 000001F7 FEC1                     inc cl
+   283 000001F9 80F90A                   cmp cl,10 ; 10 iérations = nb sommets
+   284 000001FC 0F825BFFFFFF             jb forpts
+   285                                   
+   286 00000202 B100                    mov cl,0 ; compteur à zero
+   287                                  forfaces:
+   288 00000204 48BB-                    mov rbx,face1
+   288 00000206 [8E01000000000000] 
+   289 0000020E B804000000               mov rax,4
+   290 00000213 F6E1                     mul cl
+   291 00000215 4801C3                   add rbx,rax ; rbx = adresse face itérée
    292                                   
-   293 00000226 59                       pop rcx
+   293 00000218 51                       push rcx
    294                                   
-   295                                   ; si la fonction retourne 1,
-   296                                   ; on affiche la face
-   297                                   ; sinon on continue la boucle
-   298 00000227 4883F801                 cmp rax,1
-   299 0000022B 0F857F020000             jne endforfaces
-   300                                      
-   301                                   ;greyfaces:
-   302                                   ;   mov rdi,qword[display_name]
-   303                                   ;   mov rsi,qword[gc]
-   304                                   ;   mov rdx,0x333333	; Couleur du crayon
-   305                                   ;   call XSetForeground
-   306                                   ;   jmp after_face_color
-   307                                   ;whitefaces:
-   308                                   ;   mov rdi,qword[display_name]
-   309                                   ;   mov rsi,qword[gc]
-   310                                   ;   mov rdx,0xFFFFFF	; Couleur du crayon
-   311                                   ;   call XSetForeground
-   312                                   ;   jmp after_face_color
-   313                                   ;after_face_color:
-   314                                   
-   315 00000231 51                       push rcx ; empilement de rcx
-   316                                  
-   317                                    ; debug affiche la face affichées
-   318 00000232 48BF-                     mov rdi, faceMsg
-   318 00000234 [6501000000000000] 
-   319 0000023C 4889CE                    mov rsi, rcx
-   320 0000023F B800000000                mov rax,0
-   321 00000244 E8(00000000)              call printf
-   322                                  
-   323                                    ; recuperation des coords 2D 
-   324                                    ; à partir des  sommets 1
-   325                                    ; de la face
-   326 00000249 B800000000                mov rax,0
-   327 0000024E 48B9-                     mov rcx,pjpt1
-   327 00000250 [F000000000000000] 
-   328 00000258 B008                      mov al, 8
-   329 0000025A 8A23                      mov ah, [rbx]
-   330 0000025C F6E4                      mul ah
-   331 0000025E 4801C1                    add rcx, rax
-   332 00000261 4889C8                    mov rax, rcx
-   333 00000264 8B08                      mov ecx, [rax]
-   334 00000266 890C25[70010000]          mov [x1],ecx
-   335 0000026D 8B4804                    mov ecx, [rax+4]
-   336 00000270 890C25[78010000]          mov [y1],ecx
-   337                                   
-   338                                    ; recuperation des coords 2D 
-   339                                    ; à partir des  sommets 2
-   340                                    ; de la face
-   341 00000277 B800000000                mov rax,0
-   342 0000027C 48B9-                     mov rcx,pjpt1
-   342 0000027E [F000000000000000] 
-   343 00000286 B008                      mov al, 8
-   344 00000288 8A6301                    mov ah, [rbx+1]
-   345 0000028B F6E4                      mul ah
-   346 0000028D 4801C1                    add rcx, rax
-   347 00000290 4889C8                    mov rax, rcx
-   348 00000293 8B08                      mov ecx, [rax]
-   349 00000295 890C25[74010000]          mov [x2],ecx
-   350 0000029C 8B4804                    mov ecx, [rax+4]
-   351 0000029F 890C25[7C010000]          mov [y2],ecx
-   352                                   
-   353                                   ; Dessine la ligne entre 1 et 2
-   354 000002A6 488B3C25[00000000]        mov rdi,qword[display_name]
-   355 000002AE 488B3425[1C000000]        mov rsi,qword[window]
-   356 000002B6 488B1425[24000000]        mov rdx,qword[gc]
-   357 000002BE 8B0C25[70010000]          mov ecx,dword[x1]	; coordonnée source en x
-   358 000002C5 448B0425[78010000]        mov r8d,dword[y1]	; coordonnée source en y
-   359 000002CD 448B0C25[74010000]        mov r9d,dword[x2]	; coordonnée destination en x
-   360 000002D5 FF3425[7C010000]          push qword[y2]		; coordonnée destination en y
-   361 000002DC E8(00000000)              call XDrawLine
-   362 000002E1 59                        pop rcx
-   363                                   
-   364                                   ; recuperation des coords 2D 
-   365                                    ; à partir des  sommets 2
-   366                                    ; de la face
-   367 000002E2 B800000000                mov rax,0
-   368 000002E7 48B9-                     mov rcx,pjpt1
-   368 000002E9 [F000000000000000] 
-   369 000002F1 B008                      mov al, 8
-   370 000002F3 8A6301                    mov ah, [rbx+1]
-   371 000002F6 F6E4                      mul ah
-   372 000002F8 4801C1                    add rcx, rax
-   373 000002FB 4889C8                    mov rax, rcx
-   374 000002FE 8B08                      mov ecx, [rax]
-   375 00000300 890C25[70010000]          mov [x1],ecx
-   376 00000307 8B4804                    mov ecx, [rax+4]
-   377 0000030A 890C25[78010000]          mov [y1],ecx
-   378                                   
-   379                                   ; recuperation des coords 2D 
-   380                                    ; à partir des  sommets 3
-   381                                    ; de la face
-   382 00000311 B800000000                mov rax,0
-   383 00000316 48B9-                     mov rcx,pjpt1
-   383 00000318 [F000000000000000] 
-   384 00000320 B008                      mov al, 8
-   385 00000322 8A6302                    mov ah, [rbx+2]
-   386 00000325 F6E4                      mul ah
-   387 00000327 4801C1                    add rcx, rax
-   388 0000032A 4889C8                    mov rax, rcx
-   389 0000032D 8B08                      mov ecx, [rax]
-   390 0000032F 890C25[74010000]          mov [x2],ecx
-   391 00000336 8B4804                    mov ecx, [rax+4]
-   392 00000339 890C25[7C010000]          mov [y2],ecx
+   295                                   ; vecteur position 1  (commun)
+   296 00000219 48B9-                    mov rcx, pjpt1
+   296 0000021B [3801000000000000] 
+   297 00000223 B408                     mov ah,8
+   298 00000225 8A03                     mov al, [rbx]
+   299 00000227 F6E4                     mul ah
+   300 00000229 4801C1                   add rcx, rax
+   301 0000022C 4889CF                   mov rdi,rcx  
+   302                                  
+   303                                   ; vecteur position 2
+   304 0000022F 48B9-                    mov rcx, pjpt1
+   304 00000231 [3801000000000000] 
+   305 00000239 B408                     mov ah,8
+   306 0000023B 8A4301                   mov al, [rbx+1]
+   307 0000023E F6E4                     mul ah
+   308 00000240 4801C1                   add rcx, rax
+   309 00000243 4889CE                   mov rsi,rcx 
+   310                                   
+   311                                   ; vecteur position 3
+   312 00000246 48B9-                    mov rcx, pjpt1
+   312 00000248 [3801000000000000] 
+   313 00000250 B408                     mov ah,8
+   314 00000252 8A4303                   mov al, [rbx+3]
+   315 00000255 F6E4                     mul ah
+   316 00000257 4801C1                   add rcx, rax
+   317 0000025A 4889CA                   mov rdx,rcx 
+   318                                   
+   319                                   ;Appel de la fonction de face
+   320                                   ;canShow(vec2 rdi, vec2 rsi, vec rdx) 
+   321 0000025D E8(00000000)             call canShow
+   322                                   
+   323 00000262 59                       pop rcx
+   324                                   
+   325                                   ; si la fonction retourne 1,
+   326                                   ; on affiche la face
+   327                                   ; sinon on continue la boucle
+   328 00000263 4883F801                 cmp rax,1
+   329 00000267 0F857F020000             jne endforfaces
+   330                                      
+   331                                   ;greyfaces:
+   332                                   ;   mov rdi,qword[display_name]
+   333                                   ;   mov rsi,qword[gc]
+   334                                   ;   mov rdx,0x333333	; Couleur du crayon
+   335                                   ;   call XSetForeground
+   336                                   ;   jmp after_face_color
+   337                                   ;whitefaces:
+   338                                   ;   mov rdi,qword[display_name]
+   339                                   ;   mov rsi,qword[gc]
+   340                                   ;   mov rdx,0xFFFFFF	; Couleur du crayon
+   341                                   ;   call XSetForeground
+   342                                   ;   jmp after_face_color
+   343                                   ;after_face_color:
+   344                                   
+   345 0000026D 51                       push rcx ; empilement de rcx
+   346                                  
+   347                                    ; debug affiche la face affichées
+   348 0000026E 48BF-                     mov rdi, faceMsg
+   348 00000270 [D801000000000000] 
+   349 00000278 4889CE                    mov rsi, rcx
+   350 0000027B B800000000                mov rax,0
+   351 00000280 E8(00000000)              call printf
+   352                                  
+   353                                    ; recuperation des coords 2D 
+   354                                    ; à partir des  sommets 1
+   355                                    ; de la face
+   356 00000285 B800000000                mov rax,0
+   357 0000028A 48B9-                     mov rcx,pjpt1
+   357 0000028C [3801000000000000] 
+   358 00000294 B008                      mov al, 8
+   359 00000296 8A23                      mov ah, [rbx]
+   360 00000298 F6E4                      mul ah
+   361 0000029A 4801C1                    add rcx, rax
+   362 0000029D 4889C8                    mov rax, rcx
+   363 000002A0 8B08                      mov ecx, [rax]
+   364 000002A2 890C25[E3010000]          mov [x1],ecx
+   365 000002A9 8B4804                    mov ecx, [rax+4]
+   366 000002AC 890C25[EB010000]          mov [y1],ecx
+   367                                   
+   368                                    ; recuperation des coords 2D 
+   369                                    ; à partir des  sommets 2
+   370                                    ; de la face
+   371 000002B3 B800000000                mov rax,0
+   372 000002B8 48B9-                     mov rcx,pjpt1
+   372 000002BA [3801000000000000] 
+   373 000002C2 B008                      mov al, 8
+   374 000002C4 8A6301                    mov ah, [rbx+1]
+   375 000002C7 F6E4                      mul ah
+   376 000002C9 4801C1                    add rcx, rax
+   377 000002CC 4889C8                    mov rax, rcx
+   378 000002CF 8B08                      mov ecx, [rax]
+   379 000002D1 890C25[E7010000]          mov [x2],ecx
+   380 000002D8 8B4804                    mov ecx, [rax+4]
+   381 000002DB 890C25[EF010000]          mov [y2],ecx
+   382                                   
+   383                                   ; Dessine la ligne entre 1 et 2
+   384 000002E2 488B3C25[00000000]        mov rdi,qword[display_name]
+   385 000002EA 488B3425[1C000000]        mov rsi,qword[window]
+   386 000002F2 488B1425[24000000]        mov rdx,qword[gc]
+   387 000002FA 8B0C25[E3010000]          mov ecx,dword[x1]	; coordonnée source en x
+   388 00000301 448B0425[EB010000]        mov r8d,dword[y1]	; coordonnée source en y
+   389 00000309 448B0C25[E7010000]        mov r9d,dword[x2]	; coordonnée destination en x
+   390 00000311 FF3425[EF010000]          push qword[y2]		; coordonnée destination en y
+   391 00000318 E8(00000000)              call XDrawLine
+   392 0000031D 59                        pop rcx
    393                                   
-   394                                   ; Dessine la ligne entre 2 et 3
-   395 00000340 488B3C25[00000000]        mov rdi,qword[display_name]
-   396 00000348 488B3425[1C000000]        mov rsi,qword[window]
-   397 00000350 488B1425[24000000]        mov rdx,qword[gc]
-   398 00000358 8B0C25[70010000]          mov ecx,dword[x1]	; coordonnée source en x
-   399 0000035F 448B0425[78010000]        mov r8d,dword[y1]	; coordonnée source en y
-   400 00000367 448B0C25[74010000]        mov r9d,dword[x2]	; coordonnée destination en x
-   401 0000036F FF3425[7C010000]          push qword[y2]		; coordonnée destination en y
-   402 00000376 E8(00000000)              call XDrawLine
-   403 0000037B 59                        pop rcx
-   404                                    
-   405                                    ; recuperation des coords 2D 
-   406                                    ; à partir des  sommets 3
-   407                                    ; de la face
-   408 0000037C B800000000                mov rax,0
-   409 00000381 48B9-                     mov rcx,pjpt1
-   409 00000383 [F000000000000000] 
-   410 0000038B B008                      mov al, 8
-   411 0000038D 8A6302                    mov ah, [rbx+2]
-   412 00000390 F6E4                      mul ah
-   413 00000392 4801C1                    add rcx, rax
-   414 00000395 4889C8                    mov rax, rcx
-   415 00000398 8B08                      mov ecx, [rax]
-   416 0000039A 890C25[70010000]          mov [x1],ecx
-   417 000003A1 8B4804                    mov ecx, [rax+4]
-   418 000003A4 890C25[78010000]          mov [y1],ecx
-   419                                   
-   420                                   ; recuperation des coords 2D 
-   421                                    ; à partir des  sommets 4
-   422                                    ; de la face
-   423 000003AB B800000000                mov rax,0
-   424 000003B0 48B9-                     mov rcx,pjpt1
-   424 000003B2 [F000000000000000] 
-   425 000003BA B008                      mov al, 8
-   426 000003BC 8A6303                    mov ah, [rbx+3]
-   427 000003BF F6E4                      mul ah
-   428 000003C1 4801C1                    add rcx, rax
-   429 000003C4 4889C8                    mov rax, rcx
-   430 000003C7 8B08                      mov ecx, [rax]
-   431 000003C9 890C25[74010000]          mov [x2],ecx
-   432 000003D0 8B4804                    mov ecx, [rax+4]
-   433 000003D3 890C25[7C010000]          mov [y2],ecx
-   434                                   
-   435                                   ; Dessine la ligne entre 3 et 4
-   436 000003DA 488B3C25[00000000]        mov rdi,qword[display_name]
-   437 000003E2 488B3425[1C000000]        mov rsi,qword[window]
-   438 000003EA 488B1425[24000000]        mov rdx,qword[gc]
-   439 000003F2 8B0C25[70010000]          mov ecx,dword[x1]	; coordonnée source en x
-   440 000003F9 448B0425[78010000]        mov r8d,dword[y1]	; coordonnée source en y
-   441 00000401 448B0C25[74010000]        mov r9d,dword[x2]	; coordonnée destination en x
-   442 00000409 FF3425[7C010000]          push qword[y2]		; coordonnée destination en y
-   443 00000410 E8(00000000)              call XDrawLine
-   444 00000415 59                        pop rcx
-   445                                    
-   446                                    ; recuperation des coords 2D 
-   447                                    ; à partir des  sommets 4
-   448                                    ; de la face
-   449 00000416 B800000000                mov rax,0
-   450 0000041B 48B9-                     mov rcx,pjpt1
-   450 0000041D [F000000000000000] 
-   451 00000425 B008                      mov al, 8
-   452 00000427 8A6303                    mov ah, [rbx+3]
-   453 0000042A F6E4                      mul ah
-   454 0000042C 4801C1                    add rcx, rax
-   455 0000042F 4889C8                    mov rax, rcx
-   456 00000432 8B08                      mov ecx, [rax]
-   457 00000434 890C25[70010000]          mov [x1],ecx
-   458 0000043B 8B4804                    mov ecx, [rax+4]
-   459 0000043E 890C25[78010000]          mov [y1],ecx
-   460                                   
-   461                                   ; recuperation des coords 2D 
-   462                                    ; à partir des  sommets 1
-   463                                    ; de la face
-   464 00000445 B800000000                mov rax,0
-   465 0000044A 48B9-                     mov rcx,pjpt1
-   465 0000044C [F000000000000000] 
-   466 00000454 B008                      mov al, 8
-   467 00000456 8A23                      mov ah, [rbx]
-   468 00000458 F6E4                      mul ah
-   469 0000045A 4801C1                    add rcx, rax
-   470 0000045D 4889C8                    mov rax, rcx
-   471 00000460 8B08                      mov ecx, [rax]
-   472 00000462 890C25[74010000]          mov [x2],ecx
-   473 00000469 8B4804                    mov ecx, [rax+4]
-   474 0000046C 890C25[7C010000]          mov [y2],ecx
-   475                                   
-   476                                    ; Dessine la ligne entre 4 et 1
-   477 00000473 488B3C25[00000000]        mov rdi,qword[display_name]
-   478 0000047B 488B3425[1C000000]        mov rsi,qword[window]
-   479 00000483 488B1425[24000000]        mov rdx,qword[gc]
-   480 0000048B 8B0C25[70010000]          mov ecx,dword[x1]	; coordonnée source en x
-   481 00000492 448B0425[78010000]        mov r8d,dword[y1]	; coordonnée source en y
-   482 0000049A 448B0C25[74010000]        mov r9d,dword[x2]	; coordonnée destination en x
-   483 000004A2 FF3425[7C010000]          push qword[y2]		; coordonnée destination en y
-   484 000004A9 E8(00000000)              call XDrawLine
-   485 000004AE 59                        pop rcx
-   486                                    
-   487 000004AF 59                        pop rcx
-   488                                   
-   489                                   endforfaces:
+   394                                   ; recuperation des coords 2D 
+   395                                    ; à partir des  sommets 2
+   396                                    ; de la face
+   397 0000031E B800000000                mov rax,0
+   398 00000323 48B9-                     mov rcx,pjpt1
+   398 00000325 [3801000000000000] 
+   399 0000032D B008                      mov al, 8
+   400 0000032F 8A6301                    mov ah, [rbx+1]
+   401 00000332 F6E4                      mul ah
+   402 00000334 4801C1                    add rcx, rax
+   403 00000337 4889C8                    mov rax, rcx
+   404 0000033A 8B08                      mov ecx, [rax]
+   405 0000033C 890C25[E3010000]          mov [x1],ecx
+   406 00000343 8B4804                    mov ecx, [rax+4]
+   407 00000346 890C25[EB010000]          mov [y1],ecx
+   408                                   
+   409                                   ; recuperation des coords 2D 
+   410                                    ; à partir des  sommets 3
+   411                                    ; de la face
+   412 0000034D B800000000                mov rax,0
+   413 00000352 48B9-                     mov rcx,pjpt1
+   413 00000354 [3801000000000000] 
+   414 0000035C B008                      mov al, 8
+   415 0000035E 8A6302                    mov ah, [rbx+2]
+   416 00000361 F6E4                      mul ah
+   417 00000363 4801C1                    add rcx, rax
+   418 00000366 4889C8                    mov rax, rcx
+   419 00000369 8B08                      mov ecx, [rax]
+   420 0000036B 890C25[E7010000]          mov [x2],ecx
+   421 00000372 8B4804                    mov ecx, [rax+4]
+   422 00000375 890C25[EF010000]          mov [y2],ecx
+   423                                   
+   424                                   ; Dessine la ligne entre 2 et 3
+   425 0000037C 488B3C25[00000000]        mov rdi,qword[display_name]
+   426 00000384 488B3425[1C000000]        mov rsi,qword[window]
+   427 0000038C 488B1425[24000000]        mov rdx,qword[gc]
+   428 00000394 8B0C25[E3010000]          mov ecx,dword[x1]	; coordonnée source en x
+   429 0000039B 448B0425[EB010000]        mov r8d,dword[y1]	; coordonnée source en y
+   430 000003A3 448B0C25[E7010000]        mov r9d,dword[x2]	; coordonnée destination en x
+   431 000003AB FF3425[EF010000]          push qword[y2]		; coordonnée destination en y
+   432 000003B2 E8(00000000)              call XDrawLine
+   433 000003B7 59                        pop rcx
+   434                                    
+   435                                    ; recuperation des coords 2D 
+   436                                    ; à partir des  sommets 3
+   437                                    ; de la face
+   438 000003B8 B800000000                mov rax,0
+   439 000003BD 48B9-                     mov rcx,pjpt1
+   439 000003BF [3801000000000000] 
+   440 000003C7 B008                      mov al, 8
+   441 000003C9 8A6302                    mov ah, [rbx+2]
+   442 000003CC F6E4                      mul ah
+   443 000003CE 4801C1                    add rcx, rax
+   444 000003D1 4889C8                    mov rax, rcx
+   445 000003D4 8B08                      mov ecx, [rax]
+   446 000003D6 890C25[E3010000]          mov [x1],ecx
+   447 000003DD 8B4804                    mov ecx, [rax+4]
+   448 000003E0 890C25[EB010000]          mov [y1],ecx
+   449                                   
+   450                                   ; recuperation des coords 2D 
+   451                                    ; à partir des  sommets 4
+   452                                    ; de la face
+   453 000003E7 B800000000                mov rax,0
+   454 000003EC 48B9-                     mov rcx,pjpt1
+   454 000003EE [3801000000000000] 
+   455 000003F6 B008                      mov al, 8
+   456 000003F8 8A6303                    mov ah, [rbx+3]
+   457 000003FB F6E4                      mul ah
+   458 000003FD 4801C1                    add rcx, rax
+   459 00000400 4889C8                    mov rax, rcx
+   460 00000403 8B08                      mov ecx, [rax]
+   461 00000405 890C25[E7010000]          mov [x2],ecx
+   462 0000040C 8B4804                    mov ecx, [rax+4]
+   463 0000040F 890C25[EF010000]          mov [y2],ecx
+   464                                   
+   465                                   ; Dessine la ligne entre 3 et 4
+   466 00000416 488B3C25[00000000]        mov rdi,qword[display_name]
+   467 0000041E 488B3425[1C000000]        mov rsi,qword[window]
+   468 00000426 488B1425[24000000]        mov rdx,qword[gc]
+   469 0000042E 8B0C25[E3010000]          mov ecx,dword[x1]	; coordonnée source en x
+   470 00000435 448B0425[EB010000]        mov r8d,dword[y1]	; coordonnée source en y
+   471 0000043D 448B0C25[E7010000]        mov r9d,dword[x2]	; coordonnée destination en x
+   472 00000445 FF3425[EF010000]          push qword[y2]		; coordonnée destination en y
+   473 0000044C E8(00000000)              call XDrawLine
+   474 00000451 59                        pop rcx
+   475                                    
+   476                                    ; recuperation des coords 2D 
+   477                                    ; à partir des  sommets 4
+   478                                    ; de la face
+   479 00000452 B800000000                mov rax,0
+   480 00000457 48B9-                     mov rcx,pjpt1
+   480 00000459 [3801000000000000] 
+   481 00000461 B008                      mov al, 8
+   482 00000463 8A6303                    mov ah, [rbx+3]
+   483 00000466 F6E4                      mul ah
+   484 00000468 4801C1                    add rcx, rax
+   485 0000046B 4889C8                    mov rax, rcx
+   486 0000046E 8B08                      mov ecx, [rax]
+   487 00000470 890C25[E3010000]          mov [x1],ecx
+   488 00000477 8B4804                    mov ecx, [rax+4]
+   489 0000047A 890C25[EB010000]          mov [y1],ecx
    490                                   
-   491                                   
-   492 000004B0 FEC1                     inc cl
-   493 000004B2 80F906                   cmp cl, 6 ; on itère pour les 6 faces
-   494 000004B5 0F820DFDFFFF             jb forfaces
-   495                                  
-   496                                  
-   497                                  
-   498                                  ; ############################
-   499                                  ; # FIN DE LA ZONE DE DESSIN #
-   500                                  ; ############################
-   501 000004BB EB00                    jmp flush
-   502                                  
-   503                                  flush:
-   504 000004BD 488B3C25[00000000]      mov rdi,qword[display_name]
-   505 000004C5 E8(00000000)            call XFlush
-   506 000004CA E90CFCFFFF              jmp boucle
-   507 000004CF B822000000              mov rax,34
-   508 000004D4 0F05                    syscall
-   509                                  
-   510                                  closeDisplay:
-   511 000004D6 488B0425[00000000]          mov     rax,qword[display_name]
-   512 000004DE 4889C7                      mov     rdi,rax
-   513 000004E1 E8(00000000)                call    XCloseDisplay
-   514 000004E6 4831FF                      xor	    rdi,rdi
-   515 000004E9 E8(00000000)                call    exit
-   516                                  	
+   491                                   ; recuperation des coords 2D 
+   492                                    ; à partir des  sommets 1
+   493                                    ; de la face
+   494 00000481 B800000000                mov rax,0
+   495 00000486 48B9-                     mov rcx,pjpt1
+   495 00000488 [3801000000000000] 
+   496 00000490 B008                      mov al, 8
+   497 00000492 8A23                      mov ah, [rbx]
+   498 00000494 F6E4                      mul ah
+   499 00000496 4801C1                    add rcx, rax
+   500 00000499 4889C8                    mov rax, rcx
+   501 0000049C 8B08                      mov ecx, [rax]
+   502 0000049E 890C25[E7010000]          mov [x2],ecx
+   503 000004A5 8B4804                    mov ecx, [rax+4]
+   504 000004A8 890C25[EF010000]          mov [y2],ecx
+   505                                   
+   506                                    ; Dessine la ligne entre 4 et 1
+   507 000004AF 488B3C25[00000000]        mov rdi,qword[display_name]
+   508 000004B7 488B3425[1C000000]        mov rsi,qword[window]
+   509 000004BF 488B1425[24000000]        mov rdx,qword[gc]
+   510 000004C7 8B0C25[E3010000]          mov ecx,dword[x1]	; coordonnée source en x
+   511 000004CE 448B0425[EB010000]        mov r8d,dword[y1]	; coordonnée source en y
+   512 000004D6 448B0C25[E7010000]        mov r9d,dword[x2]	; coordonnée destination en x
+   513 000004DE FF3425[EF010000]          push qword[y2]		; coordonnée destination en y
+   514 000004E5 E8(00000000)              call XDrawLine
+   515 000004EA 59                        pop rcx
+   516                                    
+   517 000004EB 59                        pop rcx
+   518                                   
+   519                                   endforfaces:
+   520                                   
+   521                                   
+   522 000004EC FEC1                     inc cl
+   523 000004EE 80F90C                   cmp cl, 12 ; on itère pour les 6 faces
+   524 000004F1 0F820DFDFFFF             jb forfaces
+   525                                  
+   526                                  
+   527                                  
+   528                                  ; ############################
+   529                                  ; # FIN DE LA ZONE DE DESSIN #
+   530                                  ; ############################
+   531 000004F7 EB00                    jmp flush
+   532                                  
+   533                                  flush:
+   534 000004F9 488B3C25[00000000]      mov rdi,qword[display_name]
+   535 00000501 E8(00000000)            call XFlush
+   536 00000506 E9D0FBFFFF              jmp boucle
+   537 0000050B B822000000              mov rax,34
+   538 00000510 0F05                    syscall
+   539                                  
+   540                                  closeDisplay:
+   541 00000512 488B0425[00000000]          mov     rax,qword[display_name]
+   542 0000051A 4889C7                      mov     rdi,rax
+   543 0000051D E8(00000000)                call    XCloseDisplay
+   544 00000522 4831FF                      xor	    rdi,rdi
+   545 00000525 E8(00000000)                call    exit
+   546                                  	

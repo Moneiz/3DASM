@@ -20,6 +20,7 @@ extern exit
 extern projectVect
 extern canShow
 extern rotate
+extern scale
 
 %define	StructureNotifyMask	131072
 %define KeyPressMask		1
@@ -52,24 +53,29 @@ section .data
 event:		times	24 dq 0
 
 ;original 3d coords
-opt1:    db  -10,-10,-10
-opt2:    db  10, -10,-10
-opt3:    db  10, 10,-10
-opt4:    db  -10,10,-10
-opt5:    db  10,-10,10
-opt6:    db  -10,-10,10
-opt7:    db  -10,10,10
-opt8:    db  10,10,10
+opt1:    dw  -10,-10,-10
+opt2:    dw  10, -10,-10
+opt3:    dw  10, 10,-10
+opt4:    dw  -10,10,-10
+opt5:    dw  10,-10,10
+opt6:    dw  -10,-10,10
+opt7:    dw  -10,10,10
+opt8:    dw  10,10,10
+opt9:    dw  0,25,0
+opt10:  dw  0,-25,0
+
 
 ;modelviewed 3d coords
-pt1:    db  -10,-10,-10
-pt2:    db  10, -10,-10
-pt3:    db  10, 10,-10
-pt4:    db  -10,10,-10
-pt5:    db  10,-10,10
-pt6:    db  -10,-10,10
-pt7:    db  -10,10,10
-pt8:    db  10,10,10
+pt1:    dw  -10,-10,-10
+pt2:    dw  10, -10,-10
+pt3:    dw  10, 10,-10
+pt4:    dw  -10,10,-10
+pt5:    dw  10,-10,10
+pt6:    dw  -10,-10,10
+pt7:    dw  -10,10,10
+pt8:    dw  10,10,10
+pt9:    dw  0,15,0  ;extra
+pt10:   dw  0,-15,0
 
 ;2d coords projection
 pjpt1:  dd  0,0
@@ -80,19 +86,27 @@ pjpt5:  dd  0,0
 pjpt6:  dd  0,0
 pjpt7:  dd  0,0
 pjpt8:  dd  0,0
+pjpt9:  dd  0,0
+pjpt10: dd  0,0
 
 ;rotation
-rotx:   db  0
-roty:   db  0
-rotz:   db  0
+rotx:   dw  0
+roty:   dw  0
+rotz:   dw  0
 
 ; faces map
 face1:  db  0,1,2,3
 face2:  db  1,4,7,2
 face3:  db  4,5,6,7
 face4:  db  5,0,3,6
-face5:  db  5,4,1,0
-face6:  db  3,2,7,6
+face5:  db  6,3,8,8
+face6:  db  3,2,8,8
+face7:  db  2,7,8,8
+face8:  db  7,6,8,8
+face9:  db  4,1,9,9
+face10: db  1,0,9,9
+face11: db  0,5,9,9
+face12: db  5,4,9,9
 
 ; debug message
 vertex: db "Vertex %hhd -> %hhd,%hhd",10,0 
@@ -156,7 +170,7 @@ mov qword[gc],rax
 
 mov rdi,qword[display_name]
 mov rsi,qword[gc]
-mov rdx,0xFFFFFF	; Couleur du crayon
+mov rdx,0x000000 ; Couleur du crayon
 call XSetForeground
 
 boucle: ; boucle de gestion des évènements
@@ -179,11 +193,20 @@ rotation_event:
     mov rsi,qword[window] 
     call XClearWindow
 
-    mov al, 10
-    add [rotx],al
-    mov al, 5
-    add [roty],al
+    mov ax, 5
+    add [rotx],ax
+    mov ax, 5
+    add [roty],ax
+    
+    mov rdi,qword[display_name]
+    mov rsi,qword[gc]
+    mov rdx,0x0000FF	; Couleur du crayon
+    add dh,[roty]
+    call XSetForeground
+    
     jmp dessin
+    
+    
 
 dessin:
 
@@ -192,29 +215,36 @@ dessin:
 mov rcx,0 ; compteur à zero
 
 forpts: ; boucle for
-
  push rcx
 
- movsx rdi,byte[rotx]
- movsx rsi,byte[roty]
- movsx rdx,byte[rotz]
+ ;envoie des rotations en paramètre
+ movsx rdi,word[rotx]
+ movsx rsi,word[roty]
+ movsx rdx,word[rotz]
  push rcx
  
  mov rbx,opt1 
  xor rax,rax
- mov al,3
+ mov al,6
  mul cl
  add rbx,rax
  mov r8, rbx
  
  mov rbx,pt1 
  xor rax,rax
- mov al,3
+ mov al,6
  mul cl
  add rbx,rax
  mov rcx, rbx
 
  call rotate
+ 
+ mov ax,1
+ movsx rdi,ax
+ movsx rsi,ax
+ movsx rdx,ax
+ 
+ call scale
  
  pop rcx
  
@@ -230,7 +260,7 @@ forpts: ; boucle for
  ;passation du paramètre des points 3D
  mov rbx,pt1 
  xor rax,rax
- mov al,3
+ mov al,6
  mul cl
  add rbx,rax
  mov rdi, rbx
@@ -250,7 +280,7 @@ forpts: ; boucle for
  
  pop rcx
  inc cl
- cmp cl,8 ; 8 iérations = nb sommets
+ cmp cl,10 ; 10 iérations = nb sommets
  jb forpts
  
 mov cl,0 ; compteur à zero
@@ -490,7 +520,7 @@ forfaces:
  
  
  inc cl
- cmp cl, 6 ; on itère pour les 6 faces
+ cmp cl, 12 ; on itère pour les 6 faces
  jb forfaces
 
 
